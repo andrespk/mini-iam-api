@@ -1,0 +1,12 @@
+services:
+  mini-iam-api:
+    build:
+      context: ./src
+      dockerfile: MiniIAM.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Key=compose-dev-key-change-me
+    volumes:
+      - ./src:/src
