@@ -302,8 +302,8 @@ POST https://localhost:5001/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@local",
-  "password": "admin"
+  "email": "demo@aviater.com",
+  "password": "Demo@321"
 }
 
 ### Get User by ID
