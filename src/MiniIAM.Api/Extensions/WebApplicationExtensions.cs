@@ -1,66 +1,37 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using MiniIAM.Api.Endpoints;
-using MiniIAM.Application.UseCases.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MiniIAM.Infrastructure.Data.Contexts;
-using MiniIAM.Infrastructure.Cqrs.Abstractions;
-using MiniIAM.Infrastructure.Cqrs.Dispatchers;
-using Movies.Endpoints;
 using Movies.Swagger;
 
-namespace MiniIAM.Shared.Extensions;
+namespace Movies.Extensions;
 
-public static class WebApplicationExtensions
+public static partial class WebApplicationExtensions
 {
-    /// <summary>
-    /// Adds core infrastructure services: CQRS dispatchers/handlers, caching, auth, repositories.
-    /// </summary>
-    public static WebApplicationBuilder AddInfrastructure(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder InitInfrastructure(this WebApplicationBuilder builder)
     {
-        // MinimalCqrs dispatchers
-        builder.Services.AddScoped<ICommandDispatcher, CommandDispatcher>();
-        builder.Services.AddScoped<IQueryDispatcher, QueryDispatcher>();
-        
-        
         // Caching
         builder.Services.AddMemoryCache();
-        builder.Services.AddSingleton<Infrastructure.Caching.Abstractions.ICachingService, Infrastructure.Caching.CachingService>();
-        builder.Services.AddScoped<Infrastructure.Caching.Abstractions.ICacheProvider, Infrastructure.Caching.Providers.MemoryCacheProvider>();
+        builder.Services.AddSingleton<MiniIAM.Infrastructure.Caching.Abstractions.ICachingService, MiniIAM.Infrastructure.Caching.CachingService>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Caching.Abstractions.ICacheProvider, MiniIAM.Infrastructure.Caching.Providers.MemoryCacheProvider>();
 
         // Auth
-        builder.Services.AddScoped<Infrastructure.Auth.Abstractions.IAuthService, Infrastructure.Auth.AuthService>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Auth.Abstractions.IAuthService, MiniIAM.Infrastructure.Auth.AuthService>();
 
         // Repositories
-        builder.Services.AddScoped<Infrastructure.Data.Repositories.Users.Abstractions.IUserReadRepository, Infrastructure.Data.Repositories.Users.UserReadRepository>();
-        builder.Services.AddScoped<Infrastructure.Data.Repositories.Users.Abstractions.IUserWriteRepository, Infrastructure.Data.Repositories.Users.UserWriteRepository>();
-        builder.Services.AddScoped<Infrastructure.Data.Repositories.Roles.Abstractions.IRoleReadRepository, Infrastructure.Data.Repositories.Roles.RoleReadRepository>();
-        builder.Services.AddScoped<Infrastructure.Data.Repositories.Roles.Abstractions.IRoleWriteRepository, Infrastructure.Data.Repositories.Roles.RoleWriteRepository>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions.IUserReadRepository, MiniIAM.Infrastructure.Data.Repositories.Users.UserReadRepository>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions.IUserWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Users.UserWriteRepository>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions.IRoleReadRepository, MiniIAM.Infrastructure.Data.Repositories.Roles.RoleReadRepository>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions.IRoleWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Roles.RoleWriteRepository>();
         
-        var appAssembly = System.Reflection.Assembly.GetAssembly(typeof(LogInUser));
-        if (appAssembly != null)
-        {
-            foreach (var type in appAssembly.GetTypes())
-            {
-                foreach (var iface in type.GetInterfaces())
-                {
-                    if (iface.IsGenericType)
-                    {
-                        var gen = iface.GetGenericTypeDefinition();
-                        if (gen == typeof(ICommandHandler<,>))
-                            builder.Services.AddScoped(iface, type);
-                        else if (gen == typeof(IQueryHandler<,>))
-                            builder.Services.AddScoped(iface, type);
-                    }
-                }
-            }
-        }
+        // CQRS
+        builder.Services.AddCqrs();
 
         return builder;
     }
 
-    public static WebApplicationBuilder AddMiniIamInfrastructure(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddInfrastructure(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
         var config = builder.Configuration;
@@ -155,16 +126,8 @@ public static class WebApplicationExtensions
                 options.IncludeXmlComments(xml, includeControllerXmlComments: true);
         });
 
-        builder.AddInfrastructure();
+        builder.InitInfrastructure();
 
         return builder;
-    }
-
-    public static WebApplication UseMiniIamApi(this WebApplication app)
-    {
-        AuthEndpoints.Map(app);
-        UsersEndpoints.Map(app);
-        RolesEndpoints.Map(app);
-        return app;
     }
 }

@@ -1,9 +1,9 @@
 using MiniIAM.Shared.Extensions;
+using Movies.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Infra + Auth + EF InMemory + Swagger
-builder.AddMiniIamInfrastructure();
+builder.AddInfrastructure();
 
 var app = builder.Build();
 
@@ -16,9 +16,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Map endpoints
-app.UseMiniIamApi();
+app.MapEndpoints();
 
 app.Run();
 

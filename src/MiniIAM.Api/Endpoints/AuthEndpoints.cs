@@ -1,10 +1,13 @@
+// ===============================
+// File: src/MiniIAM.Api/Endpoints/AuthEndpoints.cs
+// ===============================
+
 using Asp.Versioning;
 using MiniIAM.Application.UseCases.Auth;
 using MiniIAM.Infrastructure.Auth.Dtos;
 using MiniIAM.Infrastructure.Cqrs.Abstractions;
-using MinimalCqrs;
 
-namespace MiniIAM.Api.Endpoints;
+namespace Movies.Endpoints;
 
 public static class AuthEndpoints
 {
@@ -17,12 +20,18 @@ public static class AuthEndpoints
 
         var group = app.MapGroup("/auth")
             .WithApiVersionSet(v1)
-            .MapToApiVersion(1.0);
+            .MapToApiVersion(1.0)
+            .WithTags("Auth");
 
-        group.MapPost("/login", async (ICommandDispatcher commands, LoginRequestDto request) =>
+        group.MapPost("/login", async (
+                ICommandDispatcher commands,
+                LoginRequestDto request,
+                CancellationToken ct) =>
             {
-                var result = await commands.DispatchAsync(new LogInUser.Command(request.Email, request.Password));
-                if (!result.IsSuccess) return Results.Unauthorized();
+                var result = await commands.Dispatch(new LogInUser.Command(request.Email, request.Password), ct);
+
+                if (!result.IsSuccess)
+                    return Results.Unauthorized();
 
                 var payload = result.Value!;
                 return Results.Ok(new LoginResponseDto(payload.AccessToken, payload.RefreshToken));
@@ -33,22 +42,30 @@ public static class AuthEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .AllowAnonymous();
 
-        group.MapPost("/logout", async (ICommandDispatcher commands, HttpContext http, CancellationToken ct) =>
+        group.MapPost("/logout", async (
+                HttpRequest http,
+                ICommandDispatcher commands,
+                CancellationToken ct) =>
             {
-                var auth = http.Request.Headers.Authorization.ToString();
-                var token = auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
-                    ? auth["Bearer ".Length..]
-                    : string.Empty;
+                var authHeader = http.Headers.Authorization.ToString();
+                var token = authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                    ? authHeader["Bearer ".Length..].Trim()
+                    : authHeader.Trim();
+
+                if (string.IsNullOrWhiteSpace(token))
+                    return Results.Unauthorized();
 
                 var result = await commands.Dispatch(new LogOutUser.Command(token), ct);
-                if (!result.IsSuccess) return Results.BadRequest(result.Error?.Message ?? "Logout failed");
 
-                return Results.Ok(new { success = true });
+                if (!result.IsSuccess)
+                    return Results.Unauthorized();
+
+                return Results.Ok(new { loggedOutAt = result.Value });
             })
-            .WithSummary("Logout user")
-            .WithDescription("Revokes the current access token.")
+            .WithSummary("Invalidate access token")
+            .WithDescription("Logs out the current user by blacklisting the presented access token.")
             .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .AllowAnonymous();
+            .Produces(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization();
     }
 }

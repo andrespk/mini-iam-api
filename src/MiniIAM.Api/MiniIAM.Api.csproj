@@ -44,4 +44,8 @@
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.0.0" />
   </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Endpoints\" />
+    </ItemGroup>
+
 </Project>
