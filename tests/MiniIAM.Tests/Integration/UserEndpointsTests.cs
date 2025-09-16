@@ -12,6 +12,10 @@ using MiniIAM.Domain.Abstractions;
 using MiniIAM.Tests.Integration;
 using System;
 using System.Collections.Generic;
+using MiniIAM.Domain.Roles.Entities;
+using MiniIAM.Domain.Users.Entitties;
+using MiniIAM.Infrastructure.Data.Contexts;
+using MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions;
 
 namespace MiniIAM.Tests.Integration;
 
@@ -19,6 +23,8 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
 {
     private readonly HttpClient _client;
     private readonly CustomApiFactory _factory;
+    private readonly Guid _newRoleId = Guid.NewGuid();
+    private readonly Guid _newUserId = Guid.NewGuid();
 
     public UserEndpointsTests(CustomApiFactory factory)
     {
@@ -77,13 +83,12 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         // Arrange
         var userId = Guid.NewGuid();
         var byUserId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
         
-        var request = new MiniIAM.Endpoints.UsersEndpoints.AddUserRoleRequest(
+        var request = new Endpoints.UsersEndpoints.AddUserRoleRequest(
             userId,
-            new List<RoleDto>
+            new List<Guid>
             {
-                new RoleDto(roleId, "TestRole", null, new DataChangesHistory())
+                _newRoleId
             },
             byUserId
         );
@@ -99,9 +104,7 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         // Verify request structure
         request.UserId.Should().Be(userId);
         request.ByUserId.Should().Be(byUserId);
-        request.Roles.Should().HaveCount(1);
-        request.Roles[0].Id.Should().Be(roleId);
-        request.Roles[0].Name.Should().Be("TestRole");
+        request.RolesIds.Should().HaveCount(1);
     }
 
     [Fact]
@@ -112,11 +115,11 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         var byUserId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
         
-        var request = new MiniIAM.Endpoints.UsersEndpoints.AddUserRoleRequest(
+        var request = new Endpoints.UsersEndpoints.AddUserRoleRequest(
             invalidUserId,
-            new List<RoleDto>
+            new List<Guid>
             {
-                new RoleDto(roleId, "TestRole", null, new DataChangesHistory())
+                Guid.NewGuid()
             },
             byUserId
         );
@@ -132,7 +135,7 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         // Verify request structure with invalid user ID
         request.UserId.Should().Be(Guid.Empty);
         request.ByUserId.Should().Be(byUserId);
-        request.Roles.Should().HaveCount(1);
+        request.RolesIds.Should().HaveCount(1);
     }
 
     [Fact]
@@ -142,9 +145,9 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         var userId = Guid.NewGuid();
         var byUserId = Guid.NewGuid();
         
-        var request = new MiniIAM.Endpoints.UsersEndpoints.AddUserRoleRequest(
+        var request = new Endpoints.UsersEndpoints.AddUserRoleRequest(
             userId,
-            new List<RoleDto>(),
+            new List<Guid>(),
             byUserId
         );
 
@@ -159,7 +162,7 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         // Verify request structure with empty roles
         request.UserId.Should().Be(userId);
         request.ByUserId.Should().Be(byUserId);
-        request.Roles.Should().BeEmpty();
+        request.RolesIds.Should().BeEmpty();
     }
 
     [Fact]
@@ -169,7 +172,7 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         var userId = Guid.NewGuid();
         var byUserId = Guid.NewGuid();
         
-        var request = new MiniIAM.Endpoints.UsersEndpoints.AddUserRoleRequest(
+        var request = new Endpoints.UsersEndpoints.AddUserRoleRequest(
             userId,
             null!,
             byUserId
@@ -204,11 +207,11 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var request = new MiniIAM.Endpoints.UsersEndpoints.AddUserRoleRequest(
+        var request = new Endpoints.UsersEndpoints.AddUserRoleRequest(
             userId,
-            new List<RoleDto>
+            new List<Guid>
             {
-                new RoleDto(Guid.NewGuid(), "TestRole", null, new DataChangesHistory())
+                Guid.NewGuid()
             },
             Guid.NewGuid()
         );
@@ -248,3 +251,4 @@ public class UserEndpointsTests : IClassFixture<CustomApiFactory>
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.NotFound, HttpStatusCode.Unauthorized);
     }
 }
+

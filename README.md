@@ -329,13 +329,9 @@ Content-Type: application/json
 
 {
   "userId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-  "roles": [
-    {
-      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-      "name": "Admin",
-      "users": null,
-      "changesHistory": null
-    }
+  "rolesIds": [
+    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "cccccccc-cccc-cccc-cccc-cccccccccccc"
   ],
   "byUserId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }

@@ -1,12 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
 using MiniIAM.Infrastructure.Data.Contexts;
-using MiniIAM.Domain.Users.Entitties;
-using MiniIAM.Domain.Users.Dtos;
-using System;
-using System.Linq;
 
 namespace MiniIAM.Tests.Integration;
 
