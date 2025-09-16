@@ -1,4 +1,4 @@
-using MiniIAM.Shared.Extensions;
+using MiniIAM.Infrastructure.Data.Seeders;
 using Movies.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +11,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<DbInitDataSeeder>();
+    await seeder.SeedAsync();
 }
 
 app.UseHttpsRedirection();

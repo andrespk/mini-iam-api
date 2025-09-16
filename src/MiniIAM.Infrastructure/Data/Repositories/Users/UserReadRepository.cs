@@ -27,6 +27,22 @@ public class UserReadRepository(MainDbContext context) : IUserReadRepository
         }
     }
 
+    public Result<UserDto> GetById(Guid id)
+    {
+        try
+        {
+            var entity = context.Users.AsNoTracking().FirstOrDefault(x => x.Id == id);
+            return entity != null
+                ? Result<UserDto>.Success(entity.ToDto())
+                : Result.NoDataFound();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(ex);
+        }
+    }
+
+
     public async Task<ResultList<UserDto>> GetPagedAsync(PageMeta pageMeta,
         Expression<Func<User, bool>>? filter,
         DataSort? sort, string? searchText = null,

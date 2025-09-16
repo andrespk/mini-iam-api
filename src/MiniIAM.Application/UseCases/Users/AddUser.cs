@@ -11,7 +11,7 @@ namespace MiniIAM.Application.UseCases.Users;
 public static class AddUser
 {
     public sealed record Command(string Email, string Name, string Password, Guid byUserId)
-        : ICommand<IHandlerResponse<Guid>>;
+        : ICommand<IHandlerResponse<Guid>>, ICommand, ICommand<Guid>;
 
     public sealed class Validator : Validator<Command>
     {

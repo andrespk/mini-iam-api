@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using Mapster;
+using MiniIAM.Domain.Roles.Dtos;
 using MiniIAM.Domain.Users.Entitties;
 using MiniIAM.Infrastructure.Cqrs.Abstractions;
 using MiniIAM.Infrastructure.Cqrs.Handlers;
+using MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions;
 using MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions;
 using MinimalCqrs;
 
@@ -10,38 +12,30 @@ namespace MiniIAM.Application.UseCases.Users;
 
 public static class AddUserUser
 {
-    public sealed record Command(string Email, string Name, string Password, Guid byUserId)
-        : ICommand<IHandlerResponse<Guid>>;
+    public sealed record Command(Guid UserId, IList<RoleDto> Roles, Guid ByUserId)
+        : ICommand<IHandlerResponse<Guid>>, ICommand;
 
     public sealed class Validator : Validator<Command>
     {
-        public Validator(IUserReadRepository repository)
+        public Validator(IUserReadRepository repository, IRoleReadRepository roleRepository)
         {
-            RuleFor(x => x.Email)
+            RuleFor(x => x.UserId)
                 .NotNull()
-                .NotEmpty()
-                .EmailAddress()
                 .MustAsync(async (id, ct) =>
-                    (await repository.GetByEmailAsync(id, ct)).Data is null)
-                .WithMessage("Invalid or unregistered e-mail.");
+                    (await repository.GetByIdAsync(id, ct)).Data is null)
+                .WithMessage("Invalid User ID.");
 
-            RuleFor(x => x.Name)
+            RuleFor(x => x.ByUserId)
                 .NotNull()
-                .NotEmpty()
-                .WithMessage("Invalid name.");
-
-            RuleFor(x => x.Name.Length)
-                .GreaterThanOrEqualTo(1)
-                .LessThanOrEqualTo(100)
-                .WithMessage("Invalid name.");
-
-            RuleFor(x => x.Password)
-                .NotEmpty()
-                .WithMessage("Invalid password.");
-
-            RuleFor(x => x.Password.Length)
-                .GreaterThanOrEqualTo(6)
-                .WithMessage("Invalid password.");
+                .MustAsync(async (id, ct) =>
+                    (await repository.GetByIdAsync(id, ct)).Data is null)
+                .WithMessage("Invalid User ID.");
+            
+            RuleFor(x => x.Roles)
+                .NotNull()
+                .MustAsync((roles, ct) =>
+                   Task.FromResult(roles.All(role => roleRepository.GetById(role.Id).Data != null)))
+                .WithMessage("Invalid User ID.");
         }
     }
 
@@ -52,11 +46,11 @@ public static class AddUserUser
         private readonly Validator _validator;
 
         public Handler(IHandlerContext context, IUserWriteRepository repository,
-            IUserReadRepository readRepository) : base(context)
+            IUserReadRepository readRepository, IRoleReadRepository roleRepository) : base(context)
         {
             _repository = repository;
             _context = context;
-            _validator = new Validator(readRepository);
+            _validator = new Validator(readRepository, roleRepository);
         }
 
         public override async Task<IHandlerResponse<Guid>> ExecuteAsync(Command command, CancellationToken ct = default)
@@ -68,7 +62,7 @@ public static class AddUserUser
                 if (validation.IsValid)
                 {
                     var user = command.Adapt<User>();
-                    var result = await _repository.InsertAsync(user, command.byUserId, ct);
+                    var result = await _repository.AddRolesAsync(command.UserId, command.Roles, command.ByUserId, ct);
 
                     if (result.IsSuccess) return Success(user.Id);
                     return Error(result.Notifications.GetStringfiedList());

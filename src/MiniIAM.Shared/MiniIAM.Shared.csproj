@@ -15,10 +15,6 @@
       <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.3.0" />
       <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
       <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.9" />
-      <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.9">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
       <PackageReference Include="Microsoft.Extensions.Diagnostics.Abstractions" Version="9.0.9" />
@@ -38,8 +34,7 @@
       <PackageReference Include="System.Text.Json" Version="9.0.9" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\MiniIAM.Infrastructure\MiniIAM.Infrastructure.csproj" />
-    </ItemGroup>
-
+    <PropertyGroup>
+        <GenerateOpenApiDocuments>false</GenerateOpenApiDocuments>
+    </PropertyGroup>
 </Project>

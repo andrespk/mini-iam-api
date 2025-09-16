@@ -19,7 +19,7 @@ public sealed class AuthService(
     IConfiguration config,
     ILogger<AuthService> logger,
     ICachingService cacheService,
-    IUserReadRepository repository)
+    IUserReadRepository userReadRepository)
     : IAuthService
 {
     public Result<string> GenerateJwt(string sub)
@@ -27,9 +27,14 @@ public sealed class AuthService(
         try
         {
             if (!Guid.TryParse(sub, out var userId))
-                return Result.Failure("Invalid sub.");
+                return Result.Failure("Invalid SUB.");
 
-            var claims = BuildClaims(userId);
+            var user = GetUserById(sub);
+            
+            if (user == null)
+                return Result.Failure("Invalid SUB.");
+
+            var claims = BuildClaims(userId, user.Email);
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? string.Empty));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
             var token = BuildJwt(creds, claims);
@@ -38,6 +43,7 @@ public sealed class AuthService(
         }
         catch (Exception ex)
         {
+            logger.LogError(ex.InnerException?.Message ?? ex.Message, ex);
             return Result.Failure(ex);
         }
 }
@@ -64,8 +70,13 @@ public sealed class AuthService(
 
             var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? string.Empty));
             var creds = new SigningCredentials(jwtKey, SecurityAlgorithms.HmacSha512);
+            
+            var user = GetUserById(sub);
+            
+            if (user == null)
+                return Result.Failure("Invalid SUB.");
 
-            var jwt = BuildJwt(creds, BuildClaims(userId));
+            var jwt = BuildJwt(creds, BuildClaims(userId, user.Email));
 
             var accessToken = new JwtSecurityTokenHandler().WriteToken(jwt);
 
@@ -73,6 +84,7 @@ public sealed class AuthService(
         }
         catch (Exception ex)
         {
+            logger.LogError(ex.InnerException?.Message ?? ex.Message, ex);
             return Result.Failure(ex);
         }
     }
@@ -84,7 +96,7 @@ public sealed class AuthService(
             ct.ThrowIfCancellationRequested();
             
             var userDtos =
-                (await repository.GetAsync(x => x.Email == request.Email || x.Name == request.Email,
+                (await userReadRepository.GetAsync(x => x.Email == request.Email || x.Name == request.Email,
                     null)).Data;
             
             if (userDtos != null)
@@ -103,6 +115,7 @@ public sealed class AuthService(
         }
         catch (Exception ex)
         {
+            logger.LogError(ex.InnerException?.Message ?? ex.Message, ex);
             return Result.Failure(ex);
         }
     }
@@ -119,6 +132,28 @@ public sealed class AuthService(
         }
         catch (Exception ex)
         {
+            logger.LogError(ex.InnerException?.Message ?? ex.Message, ex);
+            return Result.Failure(ex);
+        }
+    }
+    
+    public Result<bool> IsJwtValid(string accessToken)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(accessToken))
+                return Result.Failure("Missing access token.");
+
+            var handler = new JwtSecurityTokenHandler();
+
+            if (!handler.CanReadToken(accessToken))
+                return Result.Failure("Invalid access token.");
+
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.InnerException?.Message ?? ex.Message, ex);
             return Result.Failure(ex);
         }
     }
@@ -145,9 +180,10 @@ public sealed class AuthService(
         return token;
     }
 
-    private Claim[] BuildClaims(Guid userId) => new[]
+    private Claim[] BuildClaims(Guid userId, string email) => new[]
     {
         new Claim("sub", userId.ToString()),
+        new Claim("Email", email),
     };
 
     private bool IsTokenRevoked(string accessToken)
@@ -166,21 +202,15 @@ public sealed class AuthService(
             await cacheService.SetAsync(key, DateTime.UtcNow, TimeSpan.FromHours(24));
     }
     
-    public Result<bool> IsJwtValid(string accessToken)
-    {
-        if (string.IsNullOrWhiteSpace(accessToken))
-            return Result.Failure("Missing access token.");
-
-        var handler = new JwtSecurityTokenHandler();
-        
-        if (!handler.CanReadToken(accessToken))
-            return Result.Failure("Invalid access token.");
-
-        return Result<bool>.Success(true);
-    }
-    
     private string GetJwtBlackListKey(string accessToken) => $"blacklisted-jwt:{accessToken}";
 
     private bool IsPasswordValid(string password, UserDto user) =>
         !string.IsNullOrEmpty(password) && BCrypt.Net.BCrypt.Verify(password, user.Password);
+
+    private UserDto? GetUserById(string id)
+    {
+        var result = userReadRepository.GetById(Guid.Parse(id));
+        return result.IsSuccess ? result.Data : null;
+    }
+        
 }

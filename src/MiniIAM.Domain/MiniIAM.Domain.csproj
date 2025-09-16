@@ -9,10 +9,6 @@
 
     <ItemGroup>
       <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-      <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.9">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
       <PackageReference Include="System.Text.Json" Version="9.0.9" />
     </ItemGroup>
@@ -21,4 +17,7 @@
       <Folder Include="Roles\" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <GenerateOpenApiDocuments>false</GenerateOpenApiDocuments>
+    </PropertyGroup>
 </Project>

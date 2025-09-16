@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MiniIAM.Infrastructure.Data.Contexts;
+using MiniIAM.Infrastructure.Data.Seeders;
 using Movies.Swagger;
 
 namespace Movies.Extensions;
@@ -27,6 +28,9 @@ public static partial class WebApplicationExtensions
         
         // CQRS
         builder.Services.AddCqrs();
+        
+        //Initial Data Seeder
+        builder.Services.AddScoped<DbInitDataSeeder>();
 
         return builder;
     }

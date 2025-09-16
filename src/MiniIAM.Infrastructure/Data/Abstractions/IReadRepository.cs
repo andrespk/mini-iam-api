@@ -9,6 +9,8 @@ public interface IReadRepository<TEntity, in TUid, TModel>
     where TEntity : IEntity<TUid> where TModel : class
 {
     public Task<Result<TModel>> GetByIdAsync(TUid id, CancellationToken ct = default);
+    
+    public Result<TModel> GetById(TUid id);
 
     public Task<ResultList<TModel>> GetPagedAsync(PageMeta pageMeta, Expression<Func<TEntity, bool>>? filter,
         DataSort? sort,

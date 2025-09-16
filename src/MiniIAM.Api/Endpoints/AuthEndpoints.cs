@@ -1,7 +1,3 @@
-// ===============================
-// File: src/MiniIAM.Api/Endpoints/AuthEndpoints.cs
-// ===============================
-
 using Asp.Versioning;
 using Mapster;
 using MiniIAM.Application.UseCases.Auth;
@@ -12,6 +8,8 @@ namespace Movies.Endpoints;
 
 public static class AuthEndpoints
 {
+    public sealed record UserLoginRequest(string Email, string Password);
+    
     public static void Map(WebApplication app)
     {
         var v1 = app.NewApiVersionSet()
@@ -26,7 +24,7 @@ public static class AuthEndpoints
 
         group.MapPost("/login", async (
                 ICommandDispatcher commands,
-                LoginRequestDto request,
+                UserLoginRequest request,
                 CancellationToken ct) =>
             {
                 var command = new LogInUser.Command(request.Email, request.Password);
@@ -39,7 +37,7 @@ public static class AuthEndpoints
             })
             .WithSummary("Authenticate user")
             .WithDescription("Returns access and refresh tokens on success.")
-            .Produces<LoginResponseDto>(StatusCodes.Status200OK)
+            .Produces<LoginResponseDto>()
             .Produces(StatusCodes.Status401Unauthorized)
             .AllowAnonymous();
 

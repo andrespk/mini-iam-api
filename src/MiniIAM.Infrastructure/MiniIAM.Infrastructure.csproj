@@ -10,10 +10,6 @@
     <ItemGroup>
       <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
-      <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.9">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.9" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
@@ -38,4 +34,8 @@
       <ProjectReference Include="..\MiniIAM.Shared\MiniIAM.Shared.csproj" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.9" />
     </ItemGroup>
+
+    <PropertyGroup>
+        <GenerateOpenApiDocuments>false</GenerateOpenApiDocuments>
+    </PropertyGroup>
 </Project>

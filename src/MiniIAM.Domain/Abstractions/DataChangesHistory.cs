@@ -10,10 +10,10 @@ public sealed class DataChangesHistory(
 {
     public DateTime? CreatedAtUtc { get; set; } = createdAtUtc;
     public Guid? CreatedByUserId { get; set; } = createdByUserId;
-    public DateTime? UpdatedAtUtc { get; set; } = createdAtUtc;
-    public Guid? UpdatedByUserId { get;  set; } = createdByUserId;
-    public DateTime? DeletedAtUtc { get; set; } = createdAtUtc;
-    public Guid? DeletedByUserId { get; set; } = createdByUserId;
+    public DateTime? UpdatedAtUtc { get; set; } = updatedAtUtc;
+    public Guid? UpdatedByUserId { get;  set; } = updatedByUserId;
+    public DateTime? DeletedAtUtc { get; set; } = deletedAtUtc;
+    public Guid? DeletedByUserId { get; set; } = deletedByUserId;
 
     public DataChangesHistory(Guid? createdByUserId = null) : this(DateTime.UtcNow, createdByUserId)
     {

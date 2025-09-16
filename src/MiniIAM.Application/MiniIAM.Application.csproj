@@ -9,10 +9,6 @@
 
     <ItemGroup>
       <PackageReference Include="Mapster" Version="7.4.0" />
-      <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.9">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
       <PackageReference Include="MinimalCqrs" Version="4.1.1" />
       <PackageReference Include="Serilog" Version="4.3.0" />
@@ -24,4 +20,8 @@
       <ProjectReference Include="..\MiniIAM.Infrastructure\MiniIAM.Infrastructure.csproj" />
       <ProjectReference Include="..\MiniIAM.Shared\MiniIAM.Shared.csproj" />
     </ItemGroup>
+
+    <PropertyGroup>
+        <GenerateOpenApiDocuments>false</GenerateOpenApiDocuments>
+    </PropertyGroup>
 </Project>

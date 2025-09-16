@@ -1,7 +1,3 @@
-// ===============================
-// File: src/MiniIAM.Api/Endpoints/UsersEndpoints.cs
-// ===============================
-
 using System.Security.Claims;
 using Asp.Versioning;
 using MiniIAM.Application.UseCases.Users;
@@ -12,9 +8,9 @@ namespace Movies.Endpoints;
 
 public static class UsersEndpoints
 {
-    public sealed record CreateUserRequest(string Email, string Name, string Password);
-    public sealed record UpdateUserRequest(string Name, IEnumerable<RoleDto> Roles);
-
+    public const string SubClaimType = "sub";
+    public sealed record AddUserRequest(string Email, string Name, string Password, Guid ByUserId);
+    public sealed record AddUserRoleRequest(Guid UserId, IList<RoleDto> Roles, Guid ByUserId);
     public static void Map(WebApplication app)
     {
         var v1 = app.NewApiVersionSet()
@@ -31,54 +27,47 @@ public static class UsersEndpoints
         group.MapPost("/", async (
                 ClaimsPrincipal user,
                 ICommandDispatcher commands,
-                CreateUserRequest request,
+                AddUserRequest request,
                 CancellationToken ct) =>
             {
                 if (!TryGetUserId(user, out var byUserId))
                     return Results.Unauthorized();
 
                 var command = new AddUser.Command(request.Email, request.Name, request.Password, byUserId);
-                var result = await commands.DispatchAsync(command, ct);
-
-                if (!result.IsSuccess)
-                    return Results.BadRequest();
-
-                var id = result.Value;
-                return Results.Created($"/users/{id}", new { id });
+                var response=await commands.DispatchAsync<AddUser.Command, Guid>(command, ct);
+                
+                return Results.Created($"/users/{response}", new { Id = response });
             })
             .WithSummary("Create a new user")
             .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status500InternalServerError);
 
-        group.MapPut("/{id:guid}", async (
+        group.MapPut("/{id:guid}/roles", async (
                 ClaimsPrincipal user,
                 Guid id,
                 ICommandDispatcher commands,
-                UpdateUserRequest request,
+                AddUserRoleRequest request,
                 CancellationToken ct) =>
             {
                 if (!TryGetUserId(user, out var byUserId))
                     return Results.Unauthorized();
 
-                var result = await commands.Dispatch(new UpdateUser.Command(request.Name, request.Roles, byUserId), ct);
+                await commands.DispatchAsync(new AddUserUser.Command(request.UserId, request.Roles, byUserId), ct);
 
-                if (!result.IsSuccess)
-                    return Results.BadRequest();
-
-                return Results.Ok(new { id = result.Value });
+                return Results.Created();
             })
-            .WithSummary("Update user")
-            .Produces(StatusCodes.Status200OK)
+            .WithSummary("Add one or more roles to user")
+            .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status500InternalServerError);
     }
 
     private static bool TryGetUserId(ClaimsPrincipal user, out Guid id)
     {
         id = Guid.Empty;
-        var sub = user.FindFirst("sub")?.Value
-                  ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return Guid.TryParse(sub, out id);
+        return Guid.TryParse(user.FindFirst(SubClaimType)?.Value, out id);
     }
 }
