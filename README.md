@@ -1,4 +1,4 @@
-# MiniIAM (.NET 9, Minimal API + CQRS)
+# Mini IAM (.NET 9, Minimal API + CQRS)
 
 This project implements a minimal IAM using **Minimal API** + **CQRS (MinimalCqrs)**, organized by layers:
 
