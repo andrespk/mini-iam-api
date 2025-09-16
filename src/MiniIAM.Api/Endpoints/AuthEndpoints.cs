@@ -3,6 +3,7 @@
 // ===============================
 
 using Asp.Versioning;
+using Mapster;
 using MiniIAM.Application.UseCases.Auth;
 using MiniIAM.Infrastructure.Auth.Dtos;
 using MiniIAM.Infrastructure.Cqrs.Abstractions;
@@ -28,13 +29,13 @@ public static class AuthEndpoints
                 LoginRequestDto request,
                 CancellationToken ct) =>
             {
-                var result = await commands.Dispatch(new LogInUser.Command(request.Email, request.Password), ct);
+                var command = new LogInUser.Command(request.Email, request.Password);
+                var response = await commands.DispatchAsync<LogInUser.Command, LogInUser.Response>(command, ct);
 
-                if (!result.IsSuccess)
+                if (!response.IsLoggedIn)
                     return Results.Unauthorized();
-
-                var payload = result.Value!;
-                return Results.Ok(new LoginResponseDto(payload.AccessToken, payload.RefreshToken));
+                
+                return Results.Ok(response.Adapt<LogInUser.Response>());
             })
             .WithSummary("Authenticate user")
             .WithDescription("Returns access and refresh tokens on success.")
@@ -55,12 +56,9 @@ public static class AuthEndpoints
                 if (string.IsNullOrWhiteSpace(token))
                     return Results.Unauthorized();
 
-                var result = await commands.Dispatch(new LogOutUser.Command(token), ct);
-
-                if (!result.IsSuccess)
-                    return Results.Unauthorized();
-
-                return Results.Ok(new { loggedOutAt = result.Value });
+                var deletedAtUtc = await commands.DispatchAsync<LogOutUser.Command, DateTime>(new LogOutUser.Command(token), ct);
+                
+                return Results.Ok(new { loggedOutAt = deletedAtUtc });
             })
             .WithSummary("Invalidate access token")
             .WithDescription("Logs out the current user by blacklisting the presented access token.")

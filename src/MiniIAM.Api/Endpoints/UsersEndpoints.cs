@@ -37,7 +37,8 @@ public static class UsersEndpoints
                 if (!TryGetUserId(user, out var byUserId))
                     return Results.Unauthorized();
 
-                var result = await commands.Dispatch(new AddUser.Command(request.Email, request.Name, request.Password, byUserId), ct);
+                var command = new AddUser.Command(request.Email, request.Name, request.Password, byUserId);
+                var result = await commands.DispatchAsync(command, ct);
 
                 if (!result.IsSuccess)
                     return Results.BadRequest();

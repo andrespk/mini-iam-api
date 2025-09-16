@@ -11,7 +11,7 @@ namespace MiniIAM.Application.UseCases.Auth;
 public static class LogInUser
 {
     public sealed record Command(string Email, string Password)
-        : ICommand<IHandlerResponse<Response>>;
+        : ICommand<IHandlerResponse<Response>>, ICommand, ICommand<Response>;
 
     public sealed record Response(bool IsLoggedIn, string AccessToken, string RefreshToken);
 

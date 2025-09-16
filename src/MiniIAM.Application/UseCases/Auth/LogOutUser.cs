@@ -9,7 +9,7 @@ namespace MiniIAM.Application.UseCases.Auth;
 public static class LogOutUser
 {
     public sealed record Command(string AccessToken)
-        : ICommand<IHandlerResponse<DateTime>>;
+        : ICommand<IHandlerResponse<DateTime>>, ICommand<DateTime>;
 
     public sealed class Validator : Validator<Command>
     {
