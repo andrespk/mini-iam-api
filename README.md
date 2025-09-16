@@ -216,8 +216,9 @@ curl -X POST http://localhost:3000/auth/login \
 
 ### Users
 - `POST /users` — create a user (protected).
-- `GET /users/{id}` — get user by ID (protected).
-- `PUT /users/{id}/roles` — assign roles to user (protected).
+- `GET /users/{id}` — get user by ID (protected, cached for 15 minutes).
+- `GET /users/{id}/roles` — get user roles by user ID (protected, cached for 10 minutes).
+- `PUT /users/{id}/roles` — assign roles to user (protected, invalidates cache).
 
 All user endpoints require authentication via JWT token in the `Authorization` header.
 
@@ -308,6 +309,10 @@ Content-Type: application/json
 
 ### Get User by ID
 GET https://localhost:5001/users/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+Authorization: Bearer <your-jwt-token>
+
+### Get User Roles
+GET https://localhost:5001/users/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/roles
 Authorization: Bearer <your-jwt-token>
 
 ### Create User
@@ -442,3 +447,11 @@ services:
 - **Integration Tests**: End-to-end API testing
 - **Health Check Tests**: Dedicated health endpoint testing
 - **Session Tests**: Session management functionality testing
+
+### Caching Features
+- **User Data Caching**: GET /users/{id} endpoint with 15-minute TTL
+- **User Roles Caching**: GET /users/{id}/roles endpoint with 10-minute TTL
+- **Cache Invalidation**: Automatic cache cleanup on user updates
+- **Memory Cache Provider**: In-memory caching for development
+- **Redis Cache Provider**: Redis support for production environments
+- **Cache Management**: Add, Get, Remove operations with TTL support

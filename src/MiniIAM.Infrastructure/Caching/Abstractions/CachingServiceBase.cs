@@ -8,4 +8,6 @@ public abstract class CachingServiceBase(ICacheProvider provider) : ICachingServ
     public Task<T?> GetAsync<T>(string key) => provider.GetAsync<T>(key);
 
     public bool KeyExists(string key) => provider.KeyExists(key);
+    
+    public Task RemoveAsync(string key) => provider.RemoveAsync(key);
 }

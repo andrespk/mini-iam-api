@@ -38,4 +38,10 @@ public class MemoryCacheProvider : ICacheProvider
     {
         return _cache.TryGetValue(key, out _);
     }
+
+    public Task RemoveAsync(string key)
+    {
+        _cache.Remove(key);
+        return Task.CompletedTask;
+    }
 }

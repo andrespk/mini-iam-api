@@ -30,4 +30,9 @@ public class RedisCacheProvider : ICacheProvider
     }
 
     public bool KeyExists(string key) => _db.KeyExists(new RedisKey(key));
+
+    public async Task RemoveAsync(string key)
+    {
+        await _db.KeyDeleteAsync(new RedisKey(key));
+    }
 }

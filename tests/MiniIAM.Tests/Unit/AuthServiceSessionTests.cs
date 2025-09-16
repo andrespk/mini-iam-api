@@ -10,6 +10,8 @@ using MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions;
 using MiniIAM.Infrastructure.Data.Repositories.Sessions.Abstractions;
 using MiniIAM.Domain.Sessions.Dtos;
 using MiniIAM.Domain.Users.Dtos;
+using MiniIAM.Domain.Abstractions;
+using MiniIAM.Domain.Roles.Dtos;
 using Moq;
 using System.Collections.Generic;
 
@@ -52,11 +54,15 @@ public class AuthServiceSessionTests
     public void GenerateJwt_WithSessionId_ShouldIncludeSessionClaim()
     {
         // Arrange
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
+        var userDto = new UserDto(userId, "Test User", "test@example.com", "hashedpassword", new List<RoleDto>(), new DataChangesHistory());
+
+        _userReadRepositoryMock.Setup(x => x.GetById(userId))
+            .Returns(Result<UserDto>.Success(userDto));
 
         // Act
-        var result = _authService.GenerateJwt(userId, sessionId);
+        var result = _authService.GenerateJwt(userId.ToString(), sessionId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -67,10 +73,14 @@ public class AuthServiceSessionTests
     public void GenerateJwt_WithoutSessionId_ShouldStillWork()
     {
         // Arrange
-        var userId = Guid.NewGuid().ToString();
+        var userId = Guid.NewGuid();
+        var userDto = new UserDto(userId, "Test User", "test@example.com", "hashedpassword", new List<RoleDto>(), new DataChangesHistory());
+
+        _userReadRepositoryMock.Setup(x => x.GetById(userId))
+            .Returns(Result<UserDto>.Success(userDto));
 
         // Act
-        var result = _authService.GenerateJwt(userId);
+        var result = _authService.GenerateJwt(userId.ToString());
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -103,6 +113,10 @@ public class AuthServiceSessionTests
         _sessionWriteRepositoryMock
             .Setup(x => x.UpdateSessionTokensAsync(sessionId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<MiniIAM.Domain.Sessions.Entities.Session>.Success(new MiniIAM.Domain.Sessions.Entities.Session(userId, "", "")));
+
+        var userDto = new UserDto(userId, "Test User", "test@example.com", "hashedpassword", new List<RoleDto>(), new DataChangesHistory());
+        _userReadRepositoryMock.Setup(x => x.GetById(userId))
+            .Returns(Result<UserDto>.Success(userDto));
 
         // Act
         var result = await _authService.RefreshJwtAsync(refreshToken);

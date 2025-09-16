@@ -6,4 +6,5 @@ public interface ICacheProvider
     public Task SetAsync<T>(string key, T value, TimeSpan expiry);
     public Task<T?> GetAsync<T>(string key);
     public bool KeyExists(string key);
+    public Task RemoveAsync(string key);
 }
