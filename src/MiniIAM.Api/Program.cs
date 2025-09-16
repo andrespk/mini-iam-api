@@ -9,7 +9,6 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Serilog
 builder.Host.UseSerilog();
 
 builder.AddInfrastructure();

@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -61,7 +60,6 @@ public sealed class AuthService(
             if (string.IsNullOrWhiteSpace(refreshToken))
                 return Result.Failure("Missing refresh token.");
 
-            // Buscar sessão pelo refresh token
             var sessionResult = await sessionReadRepository.GetByAccessTokenAsync(refreshToken, ct);
             if (!sessionResult.IsSuccess || sessionResult.Data == null)
                 return Result.Failure("Invalid or expired refresh token.");
@@ -70,20 +68,16 @@ public sealed class AuthService(
             if (!session.IsActive)
                 return Result.Failure("Session is inactive.");
 
-            // Verificar se a sessão não expirou (20 minutos)
             var sessionExpiration = TimeSpan.FromMinutes(20);
             if (DateTime.UtcNow - session.LastRefreshedAtUtc > sessionExpiration)
             {
-                // Desativar sessão expirada
                 await sessionWriteRepository.DeactivateSessionAsync(session.Id, ct);
                 return Result.Failure("Session expired.");
             }
 
-            // Gerar novos tokens
             var newRefreshToken = NewRefreshToken();
             var newAccessToken = GenerateJwt(session.UserId.ToString(), session.Id).Data!;
 
-            // Atualizar sessão com novos tokens
             var updateResult = await sessionWriteRepository.UpdateSessionTokensAsync(
                 session.Id, newAccessToken, newRefreshToken, ct);
 
@@ -115,7 +109,6 @@ public sealed class AuthService(
 
                 if (IsPasswordValid(request.Password, user))
                 {
-                    // Verificar e desativar sessões expiradas do usuário
                     var expiredSessions = await sessionReadRepository.GetExpiredSessionsByUserIdAsync(
                         user.Id, TimeSpan.FromMinutes(20), ct);
                     
@@ -124,7 +117,6 @@ public sealed class AuthService(
                         await sessionWriteRepository.DeactivateSessionsByUserIdAsync(user.Id, ct);
                     }
 
-                    // Criar nova sessão
                     var refreshToken = NewRefreshToken();
                     var session = new MiniIAM.Domain.Sessions.Entities.Session(user.Id, "", refreshToken);
                     var sessionResult = await sessionWriteRepository.CreateSessionAsync(session, ct);
@@ -132,10 +124,8 @@ public sealed class AuthService(
                     if (!sessionResult.IsSuccess)
                         return Result.Failure("Failed to create session.");
 
-                    // Gerar access token com ID da sessão
                     var accessToken = GenerateJwt(user.Id.ToString(), session.Id).Data!;
                     
-                    // Atualizar sessão com access token
                     await sessionWriteRepository.UpdateSessionTokensAsync(session.Id, accessToken, refreshToken, ct);
 
                     return Result<LoginResponseDto>.Success(new LoginResponseDto(true, accessToken, refreshToken));
@@ -158,7 +148,6 @@ public sealed class AuthService(
             ct.ThrowIfCancellationRequested();
             IsJwtValid(accessToken);
             
-            // Buscar sessão pelo access token e desativar
             var sessionResult = await sessionReadRepository.GetByAccessTokenAsync(accessToken, ct);
             if (sessionResult.IsSuccess && sessionResult.Data != null)
             {

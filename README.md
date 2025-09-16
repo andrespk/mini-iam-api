@@ -74,17 +74,133 @@ Swagger: `https://localhost:5001/swagger` (or whatever Kestrel port you see).
 
 ### Via Docker Compose
 
-#### Windows (PowerShell)
+#### Prerequisites
+- Docker Desktop installed and running
+- Docker Compose v2.0+ (included with Docker Desktop)
+
+#### Quick Start
+
+##### Windows (PowerShell)
 ```powershell
+# Navigate to project root
+cd D:\aviater-code-test\mini-iam-api
+
+# Build and start the container
 docker-compose up --build
+
+# Or run in detached mode (background)
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
 ```
 
-#### Linux/macOS (Bash)
+##### Linux/macOS (Bash)
 ```bash
+# Navigate to project root
+cd /path/to/mini-iam-api
+
+# Build and start the container
 docker-compose up --build
+
+# Or run in detached mode (background)
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
 ```
 
-Browse `http://localhost:3000/swagger` or test health check at `http://localhost:3000/health`.
+#### Access the Application
+- **Swagger UI**: `http://localhost:3000/swagger`
+- **Health Check**: `http://localhost:3000/health`
+- **Detailed Health**: `http://localhost:3000/health/detailed`
+- **API Base URL**: `http://localhost:3000`
+
+#### Docker Compose Commands
+
+```bash
+# Build and start services
+docker-compose up --build
+
+# Start in background (detached mode)
+docker-compose up -d
+
+# View running containers
+docker-compose ps
+
+# View logs
+docker-compose logs
+
+# Follow logs in real-time
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+
+# Rebuild without cache
+docker-compose build --no-cache
+
+# Restart services
+docker-compose restart
+```
+
+#### Troubleshooting
+
+##### Port Already in Use
+If port 3000 is already in use, you can change it in `docker-compose.yml`:
+```yaml
+ports:
+  - "3001:80"  # Change 3000 to 3001 or any available port
+```
+
+##### Container Won't Start
+```bash
+# Check container logs
+docker-compose logs
+
+# Check if port is available
+netstat -an | grep :3000  # Windows
+lsof -i :3000             # Linux/macOS
+
+# Kill processes using the port (Windows)
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+```
+
+##### Clean Docker Environment
+```bash
+# Remove all containers and images
+docker-compose down --rmi all
+
+# Remove unused Docker resources
+docker system prune -a
+
+# Rebuild from scratch
+docker-compose up --build --force-recreate
+```
+
+##### Verify Installation
+```bash
+# Test health endpoint
+curl http://localhost:3000/health
+
+# Test with PowerShell (Windows)
+Invoke-RestMethod -Uri "http://localhost:3000/health" -Method GET
+
+# Test login endpoint
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@demo.com", "password": "Demo@321"}'
+```
 
 ## Endpoints
 
@@ -228,7 +344,105 @@ Content-Type: application/json
 ## Docker
 
 - `src/MiniIAM.Api/Dockerfile` builds & runs the API on ASP.NET 9.
-- `docker-compose.yml` exposes the API at `8080`.
+- `docker-compose.yml` exposes the API at `http://localhost:3000`.
+- The container includes all necessary dependencies and runs the application in production mode.
+- Health checks are configured to monitor application status.
 
 ## Configuration
-- `Jwt:Key` (or `Jwt__Key` in Docker) — HMAC key to sign JWTs.
+
+### Environment Variables
+The application can be configured using environment variables:
+
+- `Jwt__Key` — HMAC key to sign JWTs (required)
+- `Jwt__Issuer` — JWT issuer (default: "MiniIAM")
+- `Jwt__Audience` — JWT audience (default: "MiniIAMClients")
+- `Jwt__ExpireMinutes` — JWT expiration time in minutes (default: 20)
+- `ASPNETCORE_ENVIRONMENT` — Environment (Development/Production)
+- `ASPNETCORE_URLS` — URLs to bind to (default: "http://+:80")
+
+### Docker Environment
+The `docker-compose.yml` file includes default environment variables:
+```yaml
+environment:
+  - Jwt__Key=your-super-secret-jwt-key-here-must-be-at-least-32-characters
+  - Jwt__Issuer=MiniIAM
+  - Jwt__Audience=MiniIAMClients
+  - Jwt__ExpireMinutes=20
+  - ASPNETCORE_ENVIRONMENT=Production
+```
+
+### Custom Configuration
+To use your own configuration, create a `.env` file in the project root:
+```env
+JWT__KEY=your-custom-jwt-key-here
+JWT__ISSUER=YourCompany
+JWT__AUDIENCE=YourApp
+JWT__EXPIRE_MINUTES=30
+```
+
+Then modify `docker-compose.yml` to use the `.env` file:
+```yaml
+services:
+  miniiam-api:
+    env_file:
+      - .env
+```
+
+## Development vs Production
+
+### Development Mode
+- Uses EF Core InMemory database
+- Swagger UI enabled
+- Detailed error messages
+- Hot reload support when running locally
+
+### Production Mode (Docker)
+- Uses EF Core InMemory database (can be configured for SQL Server)
+- Swagger UI disabled
+- Optimized for performance
+- Health checks enabled
+- Structured logging with Serilog
+
+### Switching to SQL Server
+To use SQL Server instead of InMemory database:
+
+1. Update `docker-compose.yml`:
+```yaml
+services:
+  miniiam-api:
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=MiniIAM;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;
+    depends_on:
+      - db
+  
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123!
+    ports:
+      - "1433:1433"
+```
+
+2. Update `WebApplicationExtensions.cs` to use SQL Server provider instead of InMemory.
+
+## Recent Features
+
+### Session Management
+- **Session Entity**: Tracks user sessions with access/refresh tokens
+- **Session Expiration**: Automatic cleanup of sessions older than 20 minutes
+- **JWT Claims**: Session ID included in JWT tokens for tracking
+- **Logout**: Proper session deactivation on logout
+
+### Health Checks
+- **Basic Health**: `/health` - Simple health status
+- **Detailed Health**: `/health/detailed` - Comprehensive health information
+- **Readiness**: `/health/ready` - Service readiness check
+- **Liveness**: `/health/live` - Service liveness check
+
+### Test Coverage
+- **53 Tests**: Comprehensive test suite covering all endpoints
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: End-to-end API testing
+- **Health Check Tests**: Dedicated health endpoint testing
+- **Session Tests**: Session management functionality testing

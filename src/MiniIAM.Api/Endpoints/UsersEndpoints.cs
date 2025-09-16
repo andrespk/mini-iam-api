@@ -9,8 +9,11 @@ namespace MiniIAM.Endpoints;
 public static class UsersEndpoints
 {
     public const string SubClaimType = "sub";
+
     public sealed record AddUserRequest(string Email, string Name, string Password, Guid ByUserId);
-    public sealed record AddUserRoleRequest(Guid UserId, IList<RoleDto> Roles, Guid ByUserId);
+
+    public sealed record AddUserRoleRequest(Guid UserId, IList<Guid> RolesIds, Guid ByUserId);
+
     public static void Map(WebApplication app)
     {
         var v1 = app.NewApiVersionSet()
@@ -34,8 +37,8 @@ public static class UsersEndpoints
                     return Results.Unauthorized();
 
                 var command = new AddUser.Command(request.Email, request.Name, request.Password, byUserId);
-                var response=await commands.DispatchAsync<AddUser.Command, Guid>(command, ct);
-                
+                var response = await commands.DispatchAsync<AddUser.Command, Guid>(command, ct);
+
                 return Results.Created($"/users/{response}", new { Id = response });
             })
             .WithSummary("Create a new user")
@@ -50,7 +53,8 @@ public static class UsersEndpoints
                 CancellationToken ct) =>
             {
                 var command = new GetUser.Command(id);
-                var response = await commands.DispatchAsync<GetUser.Command, MiniIAM.Domain.Users.Dtos.UserDto>(command, ct);
+                var response =
+                    await commands.DispatchAsync<GetUser.Command, MiniIAM.Domain.Users.Dtos.UserDto>(command, ct);
 
                 if (response == null)
                     return Results.NotFound();
@@ -73,7 +77,9 @@ public static class UsersEndpoints
                 if (!TryGetUserId(user, out var byUserId))
                     return Results.Unauthorized();
 
-                await commands.DispatchAsync(new AddUserRole.Command(request.UserId, request.Roles, byUserId), ct);
+                await commands.DispatchAsync(
+                    new AddUserRole.Command(request.UserId, request.RolesIds.Select(x => new RoleDto(x)).ToList(),
+                        byUserId), ct);
 
                 return Results.Created();
             })
