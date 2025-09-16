@@ -8,6 +8,12 @@ public class Role : EntityBase<Guid>
 {
     private readonly List<User> _users = new();
 
+    // Constructor for Entity Framework
+    private Role() : base(Guid.NewGuid(), new DataChangesHistory())
+    {
+        Name = string.Empty;
+    }
+
     public Role(Guid id, string name, DataChangesHistory? changesHistory) : base(id, changesHistory)
     {
         Name = name;

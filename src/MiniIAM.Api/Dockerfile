@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet restore MiniIAM.sln
+RUN dotnet restore MiniIAM.Api/MiniIAM.Api.csproj
 RUN dotnet publish MiniIAM.Api/MiniIAM.Api.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime

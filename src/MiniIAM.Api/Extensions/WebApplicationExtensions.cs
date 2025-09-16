@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using MiniIAM.Infrastructure.Data.Contexts;
 using MiniIAM.Infrastructure.Data.Seeders;
 using MiniIAM.Swagger;
+using Serilog;
 
 namespace MiniIAM.Extensions;
 
@@ -15,8 +16,8 @@ public static partial class WebApplicationExtensions
     {
         // Caching
         builder.Services.AddMemoryCache();
-        builder.Services.AddSingleton<MiniIAM.Infrastructure.Caching.Abstractions.ICachingService, MiniIAM.Infrastructure.Caching.CachingService>();
         builder.Services.AddScoped<MiniIAM.Infrastructure.Caching.Abstractions.ICacheProvider, MiniIAM.Infrastructure.Caching.Providers.MemoryCacheProvider>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Caching.Abstractions.ICachingService, MiniIAM.Infrastructure.Caching.CachingService>();
 
         // Auth
         builder.Services.AddScoped<MiniIAM.Infrastructure.Auth.Abstractions.IAuthService, MiniIAM.Infrastructure.Auth.AuthService>();
@@ -26,6 +27,9 @@ public static partial class WebApplicationExtensions
         builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions.IUserWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Users.UserWriteRepository>();
         builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions.IRoleReadRepository, MiniIAM.Infrastructure.Data.Repositories.Roles.RoleReadRepository>();
         builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions.IRoleWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Roles.RoleWriteRepository>();
+        
+        // Logging
+        builder.Services.AddSingleton<Serilog.ILogger>(provider => Log.Logger);
         
         // CQRS
         builder.Services.AddCqrs();

@@ -16,20 +16,11 @@ public class CustomApiFactory : WebApplicationFactory<MiniIAM.Program>
     {
         builder.ConfigureServices(services =>
         {
-            // Ensure database is created and seeded for tests
+            // Ensure database is created for tests
             var provider = services.BuildServiceProvider();
             using var scope = provider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<MainDbContext>();
             db.Database.EnsureCreated();
-
-            if (!db.Users.Any())
-            {
-                var admin = new User(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "Admin", "admin@local",
-                    BCrypt.Net.BCrypt.HashPassword("admin"), roles: new List<MiniIAM.Domain.Roles.Entities.Role>(), 
-                    changesHistory: new MiniIAM.Domain.Abstractions.DataChangesHistory());
-                db.Add(admin);
-                db.SaveChanges();
-            }
         });
 
         return base.CreateHost(builder);

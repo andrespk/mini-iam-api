@@ -77,9 +77,9 @@ public sealed class Result<T>(T? data, IList<Notification>? notifications = null
             ? new Result<T>(default, notifications)
             : new Result<T>(default, new List<Notification>());
 
-    public static implicit operator Result<T>(Result result) => new Result(result.Notifications.List);
+    public static implicit operator Result<T>(Result result) => new Result<T>(default, result.Notifications.List);
 
-    public static implicit operator Result(Result<T> result) => new Result<T>(result.Data, result.Notifications.List);
+    public static implicit operator Result(Result<T> result) => new Result(result.Notifications.List);
 }
 
 public sealed class ResultList<T>(IList<T>? data, IList<Notification>? notifications = null, PageMeta? pageMeta = null)
@@ -117,10 +117,9 @@ public sealed class ResultList<T>(IList<T>? data, IList<Notification>? notificat
             : new ResultList<T>(default, new List<Notification>());
     }
 
-    public static implicit operator ResultList<T>(Result result) => new Result(result.Notifications.List);
+    public static implicit operator ResultList<T>(Result result) => new ResultList<T>(default, result.Notifications.List);
 
-    public static implicit operator Result(ResultList<T> result) =>
-        new ResultList<T>(result.Data, result.Notifications.List);
+    public static implicit operator Result(ResultList<T> result) => new Result(result.Notifications.List);
 }
 
 public sealed class Result(IList<Notification>? notifications = null)

@@ -1,7 +1,16 @@
 using MiniIAM.Extensions;
 using MiniIAM.Infrastructure.Data.Seeders;
+using Serilog;
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add Serilog
+builder.Host.UseSerilog();
 
 builder.AddInfrastructure();
 

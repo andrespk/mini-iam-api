@@ -44,6 +44,25 @@ public static class UsersEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status500InternalServerError);
 
+        group.MapGet("/{id:guid}", async (
+                Guid id,
+                ICommandDispatcher commands,
+                CancellationToken ct) =>
+            {
+                var command = new GetUser.Command(id);
+                var response = await commands.DispatchAsync<GetUser.Command, MiniIAM.Domain.Users.Dtos.UserDto>(command, ct);
+
+                if (response == null)
+                    return Results.NotFound();
+
+                return Results.Ok(response);
+            })
+            .WithSummary("Get user by ID")
+            .Produces<MiniIAM.Domain.Users.Dtos.UserDto>()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status500InternalServerError);
+
         group.MapPut("/{id:guid}/roles", async (
                 ClaimsPrincipal user,
                 Guid id,

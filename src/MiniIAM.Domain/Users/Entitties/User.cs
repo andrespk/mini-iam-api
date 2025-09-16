@@ -14,6 +14,14 @@ namespace MiniIAM.Domain.Users.Entitties
 
         public IReadOnlyCollection<Role> Roles => _roles;
 
+        // Constructor for Entity Framework
+        private User() : base(Guid.NewGuid(), new DataChangesHistory())
+        {
+            Name = string.Empty;
+            Email = string.Empty;
+            Password = string.Empty;
+        }
+
         public User(Guid id, string name, string email, string password, IEnumerable<Role> roles,
             DataChangesHistory changesHistory) : base(id, changesHistory)
         {
@@ -50,8 +58,11 @@ namespace MiniIAM.Domain.Users.Entitties
 
         public void SetPassword(string passwordOrHash)
         {
-            if (string.IsNullOrWhiteSpace(passwordOrHash))
+            if (string.IsNullOrWhiteSpace(passwordOrHash) || string.IsNullOrEmpty(passwordOrHash))
                 throw new ArgumentException("Password is required.", nameof(passwordOrHash));
+
+            if (passwordOrHash.Length < 6)
+                throw new ArgumentException("Password should be at least 6 characters long.", nameof(passwordOrHash));
 
             if (!BCrypt.Net.BCrypt.Verify(passwordOrHash, Password))
                 Password = BCrypt.Net.BCrypt.HashPassword(passwordOrHash);
