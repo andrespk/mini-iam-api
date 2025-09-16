@@ -106,7 +106,7 @@ public class SessionWriteRepository(MainDbContext context) : ISessionWriteReposi
             if (session == null)
                 return Result<Session>.Failure("Session not found");
 
-            session.Deactivate();
+            session.Invalidate();
             await context.SaveChangesAsync(ct);
             return Result<Session>.Success(session);
         }
@@ -126,7 +126,7 @@ public class SessionWriteRepository(MainDbContext context) : ISessionWriteReposi
 
             foreach (var session in sessions)
             {
-                session.Deactivate();
+                session.Invalidate();
             }
 
             await context.SaveChangesAsync(ct);

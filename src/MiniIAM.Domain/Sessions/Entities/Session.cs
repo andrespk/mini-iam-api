@@ -34,7 +34,7 @@ public class Session : EntityBase<Guid>
         IsActive = true;
     }
 
-    public void Deactivate()
+    public void Invalidate()
     {
         IsActive = false;
     }

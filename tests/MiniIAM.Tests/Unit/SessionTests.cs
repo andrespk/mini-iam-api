@@ -55,7 +55,7 @@ public class SessionTests
         session.IsActive.Should().BeTrue();
 
         // Act
-        session.Deactivate();
+        session.Invalidate();
 
         // Assert
         session.IsActive.Should().BeFalse();
