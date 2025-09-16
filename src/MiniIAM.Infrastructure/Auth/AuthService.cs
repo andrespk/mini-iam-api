@@ -31,7 +31,12 @@ public sealed class AuthService(
             if (!Guid.TryParse(sub, out var userId))
                 return Result.Failure("Invalid SUB.");
 
-            var claims = BuildClaims(userId, sub, sessionId); // Usar sub como email temporariamente
+            var userResult = userReadRepository.GetById(userId);
+
+            if (!userResult.IsSuccess)
+                return Result.Failure(userResult.Notifications.GetStringfiedList());
+            
+            var claims = BuildClaims(userId, userResult.Data!.Email, sessionId); 
             var jwtKey = config["Jwt:Key"];
             
             if (string.IsNullOrEmpty(jwtKey))
@@ -211,7 +216,7 @@ public sealed class AuthService(
     private Claim[] BuildClaims(Guid userId, string email, Guid? sessionId = null) => new[]
     {
         new Claim("sub", userId.ToString()),
-        new Claim("Email", email),
+        new Claim("email", email),
         new Claim("session_id", sessionId?.ToString() ?? string.Empty),
     };
 
