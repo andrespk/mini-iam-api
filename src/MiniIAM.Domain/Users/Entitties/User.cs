@@ -64,8 +64,15 @@ namespace MiniIAM.Domain.Users.Entitties
             if (passwordOrHash.Length < 6)
                 throw new ArgumentException("Password should be at least 6 characters long.", nameof(passwordOrHash));
 
-            if (!BCrypt.Net.BCrypt.Verify(passwordOrHash, Password))
-                Password = BCrypt.Net.BCrypt.HashPassword(passwordOrHash);
+            // Se a senha já está hasheada (vem do seeder), usa diretamente
+            if (Password != null && BCrypt.Net.BCrypt.Verify(passwordOrHash, Password))
+            {
+                // Senha já está correta, não precisa fazer nada
+                return;
+            }
+            
+            // Senha não está hasheada ou é diferente, então hash a nova senha
+            Password = BCrypt.Net.BCrypt.HashPassword(passwordOrHash);
         }
 
         public void AddRole(Role role)

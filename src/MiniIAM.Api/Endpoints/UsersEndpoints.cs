@@ -73,7 +73,7 @@ public static class UsersEndpoints
                 if (!TryGetUserId(user, out var byUserId))
                     return Results.Unauthorized();
 
-                await commands.DispatchAsync(new AddUserUser.Command(request.UserId, request.Roles, byUserId), ct);
+                await commands.DispatchAsync(new AddUserRole.Command(request.UserId, request.Roles, byUserId), ct);
 
                 return Results.Created();
             })

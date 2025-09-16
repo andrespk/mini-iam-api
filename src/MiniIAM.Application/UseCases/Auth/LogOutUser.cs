@@ -8,8 +8,7 @@ namespace MiniIAM.Application.UseCases.Auth;
 
 public static class LogOutUser
 {
-    public sealed record Command(string AccessToken)
-        : ICommand<IHandlerResponse<DateTime>>, ICommand<DateTime>;
+    public sealed record Command(string AccessToken) : ICommand, ICommand<DateTime>;
 
     public sealed class Validator : Validator<Command>
     {
@@ -35,7 +34,7 @@ public static class LogOutUser
             _validator = new Validator(_authService);
         }
 
-        public override async Task<IHandlerResponse<DateTime>> ExecuteAsync(Command command, CancellationToken ct = default)
+        public override async Task<DateTime> HandleAsync(Command command, CancellationToken ct = default)
         {
             try
             {
@@ -43,17 +42,23 @@ public static class LogOutUser
                 if (validation.IsValid)
                 {
                     var result = await _authService.LogOutAsync(command.AccessToken);
-                    return result.IsSuccess? Success(DateTime.UtcNow) : Error(result.Notifications.GetStringfiedList()); 
+                    if (result.IsSuccess) return DateTime.UtcNow;
+                    throw new InvalidOperationException(result.Notifications.GetStringfiedList());
                 }
                 
-                return Error(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
+                throw new InvalidOperationException(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
             }
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
                 _context.Logger.Error(errorMessage, ex);
-                return Error(errorMessage);
+                throw;
             }
+        }
+
+        public override DateTime Handle(Command command)
+        {
+            return HandleAsync(command).GetAwaiter().GetResult();
         }
     }
 }

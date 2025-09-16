@@ -10,8 +10,7 @@ namespace MiniIAM.Application.UseCases.Auth;
 
 public static class LogInUser
 {
-    public sealed record Command(string Email, string Password)
-        : ICommand<IHandlerResponse<Response>>, ICommand, ICommand<Response>;
+    public sealed record Command(string Email, string Password, bool? IsFirstAccess = null) : ICommand, ICommand<Response>;
 
     public sealed record Response(bool IsLoggedIn, string AccessToken, string RefreshToken);
 
@@ -26,10 +25,8 @@ public static class LogInUser
 
             RuleFor(x => x.Password)
                 .NotEmpty()
-                .WithMessage("Invalid password.");
-            
-            RuleFor(x => x.Password.Length)
-                .GreaterThanOrEqualTo(6)
+                .WithMessage("Invalid password.")
+                .Length(6, 100)
                 .WithMessage("Invalid password.");
         }
     }
@@ -46,29 +43,38 @@ public static class LogInUser
             _validator = new Validator();
         }
 
-        public override async Task<IHandlerResponse<Response>> ExecuteAsync(Command command, CancellationToken ct = default)
+        public override async Task<Response> HandleAsync(Command command, CancellationToken ct = default)
         {
             try
             {
                 var validation = await _validator.ValidateAsync(command, ct);
-                if (validation.IsValid)
+                if (!validation.IsValid)
                 {
-                    var result = await _service.LogInAsync(command.Adapt<LoginRequestDto>());
-                    
-                    if(result.IsSuccess)
-                        return Success(result.Data.Adapt<Response>());
-                    
-                    return Error(result.Notifications.GetStringfiedList());
+                    var errorMessage = string.Join("\n", validation.Errors.Select(x => x.ErrorMessage));
+                    _context.Logger.Warning("Validation failed: {ErrorMessage}", errorMessage);
+                    return new Response(false, string.Empty, string.Empty);
                 }
+
+                var result = await _service.LogInAsync(command.Adapt<LoginRequestDto>());
                 
-                return Error(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
+                if(result.IsSuccess)
+                    return result.Data.Adapt<Response>();
+                
+                var serviceErrorMessage = result.Notifications.GetStringfiedList();
+                _context.Logger.Warning("Login failed: {ErrorMessage}", serviceErrorMessage);
+                return new Response(false, string.Empty, string.Empty);
             }
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
                 _context.Logger.Error(errorMessage, ex);
-                return Error(errorMessage);
+                return new Response(false, string.Empty, string.Empty);
             }
+        }
+
+        public override Response Handle(Command command)
+        {
+            return HandleAsync(command).GetAwaiter().GetResult();
         }
     }
 }

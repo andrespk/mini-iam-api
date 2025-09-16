@@ -5,16 +5,12 @@ using Serilog;
 namespace MiniIAM.Infrastructure.Cqrs.Handlers;
 
 public abstract class CommandHandler<TCommand, TResponse> : Handler<TCommand, TResponse>
-    where TCommand : IHandlerMessage<IHandlerResponse<TResponse>>
+    where TCommand : ICommand<TResponse>
 {
-    protected readonly ILogger Logger;
-
-    protected CommandHandler(IHandlerContext context) => Logger = context.Logger;
+    protected CommandHandler(IHandlerContext context) : base(context) { }
 }
 
-public abstract class CommandHandler<TCommand> : Handler<TCommand> where TCommand : IHandlerMessage<IHandlerResponse>
+public abstract class CommandHandler<TCommand> : Handler<TCommand> where TCommand : ICommand
 {
-    protected readonly ILogger Logger;
-
-    protected CommandHandler(IHandlerContext context) =>Logger = context.Logger;
+    protected CommandHandler(IHandlerContext context) : base(context) { }
 }

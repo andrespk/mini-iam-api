@@ -10,8 +10,7 @@ namespace MiniIAM.Application.UseCases.Users;
 
 public static class AddUser
 {
-    public sealed record Command(string Email, string Name, string Password, Guid byUserId)
-        : ICommand<IHandlerResponse<Guid>>, ICommand, ICommand<Guid>;
+    public sealed record Command(string Email, string Name, string Password, Guid byUserId) : ICommand, ICommand<Guid>;
 
     public sealed class Validator : Validator<Command>
     {
@@ -59,7 +58,7 @@ public static class AddUser
             _validator = new Validator(readRepository);
         }
 
-        public override async Task<IHandlerResponse<Guid>> ExecuteAsync(Command command, CancellationToken ct = default)
+        public override async Task<Guid> HandleAsync(Command command, CancellationToken ct = default)
         {
             try
             {
@@ -70,18 +69,23 @@ public static class AddUser
                     var user = command.Adapt<User>();
                     var result = await _repository.InsertAsync(user, command.byUserId, ct);
 
-                    if (result.IsSuccess) return Success(user.Id);
-                    return Error(result.Notifications.GetStringfiedList());
+                    if (result.IsSuccess) return user.Id;
+                    throw new InvalidOperationException(result.Notifications.GetStringfiedList());
                 }
 
-                return Error(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
+                throw new InvalidOperationException(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
             }
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
                 _context.Logger.Error(errorMessage, ex);
-                return Error(errorMessage);
+                throw;
             }
+        }
+
+        public override Guid Handle(Command command)
+        {
+            return HandleAsync(command).GetAwaiter().GetResult();
         }
     }
 }

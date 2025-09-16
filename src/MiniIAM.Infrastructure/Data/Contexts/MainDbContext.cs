@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MiniIAM.Domain.Roles.Entities;
+using MiniIAM.Domain.Sessions.Entities;
 using MiniIAM.Domain.Users.Entitties;
 
 namespace MiniIAM.Infrastructure.Data.Contexts;
@@ -8,6 +9,7 @@ public class MainDbContext : DbContext
 {
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Role> Roles { get; set; } = null!;
+    public DbSet<Session> Sessions { get; set; } = null!;
     
     public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
     
@@ -51,7 +53,7 @@ public class MainDbContext : DbContext
                     ch.Property(a => a.DeletedAtUtc).HasColumnName("DeletedAtUtc");
                     ch.Property(a => a.DeletedByUserId).HasColumnName("DeletedByUserId");
                 });
-            modelBuilder.Entity<User>().HasQueryFilter(b => !b.IsDeleted);
+            // modelBuilder.Entity<User>().HasQueryFilter(b => !b.IsDeleted);
         });
         
         modelBuilder.Entity<Role>(entity =>
@@ -81,7 +83,33 @@ public class MainDbContext : DbContext
                     ch.Property(a => a.DeletedAtUtc).HasColumnName("DeletedAtUtc");
                     ch.Property(a => a.DeletedByUserId).HasColumnName("DeletedByUserId");
                 });
-            modelBuilder.Entity<Role>().HasQueryFilter(b => !b.IsDeleted);
+            // modelBuilder.Entity<Role>().HasQueryFilter(b => !b.IsDeleted);
+        });
+
+        modelBuilder.Entity<Session>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => x.UserId);
+            entity.HasIndex(x => x.LastRefreshedAtUtc);
+            entity.HasIndex(x => x.AccessToken).IsUnique();
+            
+            entity.Property(x => x.AccessToken)
+                .IsRequired()
+                .HasMaxLength(500);
+            entity.Property(x => x.RefreshToken)
+                .IsRequired()
+                .HasMaxLength(500);
+            
+            // Configure ChangesHistory as owned entity
+            entity.OwnsOne(x => x.ChangesHistory, ch =>
+            {
+                ch.Property(a => a.CreatedAtUtc).HasColumnName("CreatedAtUtc");
+                ch.Property(a => a.CreatedByUserId).HasColumnName("CreatedByUserId");
+                ch.Property(a => a.UpdatedAtUtc).HasColumnName("UpdatedAtUtc");
+                ch.Property(a => a.UpdatedByUserId).HasColumnName("UpdatedByUserId");
+                ch.Property(a => a.DeletedAtUtc).HasColumnName("DeletedAtUtc");
+                ch.Property(a => a.DeletedByUserId).HasColumnName("DeletedByUserId");
+            });
         });
     }
 }

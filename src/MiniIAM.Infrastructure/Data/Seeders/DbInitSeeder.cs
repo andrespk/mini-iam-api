@@ -17,9 +17,9 @@ public class DbInitDataSeeder
     public async Task SeedAsync(CancellationToken ct = default)
     {
         var seederUserId = Guid.Empty;
-        var demoPassword = BCrypt.Net.BCrypt.HashPassword("Demo@321");
+        var demoPassword = "Demo@321";
 
-        if (!_context.Roles.Any())
+        if (!_context.Roles.ToList().Any())
         {
             _context.Roles.Add(new Role(Guid.NewGuid(), "Admin",
                 new DataChangesHistory(DateTime.UtcNow, seederUserId)));
@@ -31,7 +31,7 @@ public class DbInitDataSeeder
 
         var roles = _context.Roles.ToList();
 
-        if (!_context.Users.Any())
+        if (!_context.Users.ToList().Any())
         {
             _context.Users.AddRange(
                 new User(Guid.NewGuid(), "Demo user", "demo@aviater.com", demoPassword,

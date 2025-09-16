@@ -51,13 +51,6 @@ tests/
 - **Swagger/OpenAPI** enabled in `Development`.
 - **Tests** with xUnit, FluentAssertions and WebApplicationFactory.
 
-## Recent Features
-
-- **GET /users/{id}**: Retrieve user information by ID
-- **Enhanced Test Coverage**: Comprehensive tests for all endpoints with ≥85% coverage target
-- **Improved Error Handling**: Better exception handling and validation across all layers
-- **Repository Pattern**: Clean separation between data access and business logic
-
 ## Run locally
 Prerequisites: .NET 9 SDK
 
@@ -81,8 +74,6 @@ Swagger: `https://localhost:5001/swagger` (or whatever Kestrel port you see).
 
 ### Via Docker Compose
 
-⚠️ **Note**: Docker setup currently has dependency injection issues that need to be resolved.
-
 #### Windows (PowerShell)
 ```powershell
 docker-compose up --build
@@ -93,24 +84,19 @@ docker-compose up --build
 docker-compose up --build
 ```
 
-**Current Status**: The Docker container builds successfully but fails to start due to DI configuration issues:
-- ICachingService lifetime conflicts
-- Missing Serilog.ILogger registration
-- Service scope mismatches
-
-**Workaround**: Use local development mode instead:
-```bash
-cd src
-dotnet run --project MiniIAM.Api
-```
-
-Browse `http://localhost:3000/swagger` (when Docker issues are resolved).
+Browse `http://localhost:3000/swagger` or test health check at `http://localhost:3000/health`.
 
 ## Endpoints
 
 ### Authentication
 - `POST /auth/login` — body: `{ "email": "", "password": "" }` → returns `{ accessToken, refreshToken }`.
 - `POST /auth/logout` — header `Authorization: Bearer <token>`.
+
+### Health Check
+- `GET /health` — basic health check, returns `{ "status": "Healthy", "timestamp": "..." }`.
+- `GET /health/detailed` — detailed health check with all registered checks and their status.
+- `GET /health/ready` — readiness check, indicates if service is ready to accept requests.
+- `GET /health/live` — liveness check, indicates if service is alive.
 
 ### Users
 - `POST /users` — create a user (protected).

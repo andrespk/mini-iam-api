@@ -2,6 +2,7 @@ using System.Data;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using MiniIAM.Infrastructure.Data.Contexts;
 using MiniIAM.Infrastructure.Data.Seeders;
@@ -27,6 +28,8 @@ public static partial class WebApplicationExtensions
         builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions.IUserWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Users.UserWriteRepository>();
         builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions.IRoleReadRepository, MiniIAM.Infrastructure.Data.Repositories.Roles.RoleReadRepository>();
         builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions.IRoleWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Roles.RoleWriteRepository>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Sessions.Abstractions.ISessionReadRepository, MiniIAM.Infrastructure.Data.Repositories.Sessions.SessionReadRepository>();
+        builder.Services.AddScoped<MiniIAM.Infrastructure.Data.Repositories.Sessions.Abstractions.ISessionWriteRepository, MiniIAM.Infrastructure.Data.Repositories.Sessions.SessionWriteRepository>();
         
         // Logging
         builder.Services.AddSingleton<Serilog.ILogger>(provider => Log.Logger);
@@ -101,6 +104,10 @@ public static partial class WebApplicationExtensions
             });
         services.AddAuthorization();
 
+        // Health Checks
+        services.AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy("Service is healthy"));
+
         // Swagger (OpenAPI) enriched
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
@@ -114,10 +121,8 @@ public static partial class WebApplicationExtensions
                 License = new Microsoft.OpenApi.Models.OpenApiLicense { Name = "MIT" }
             });
 
-            // Aplicar o OperationFilter apenas uma vez, no contexto correto do Swagger
             options.OperationFilter<DefaultResponsesOperationFilter>();
 
-            // JWT Bearer
             var scheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
                 Name = "Authorization",

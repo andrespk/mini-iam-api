@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MiniIAM.Infrastructure.Caching.Abstractions;
 using MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions;
+using MiniIAM.Infrastructure.Data.Repositories.Sessions.Abstractions;
 using Moq;
 using System.Collections.Generic;
 
@@ -20,8 +21,10 @@ public class AuthServiceTests
         var logger = new Mock<ILogger<AuthService>>();
         var cacheService = new Mock<ICachingService>();
         var userReadRepository = new Mock<IUserReadRepository>();
+        var sessionReadRepository = new Mock<ISessionReadRepository>();
+        var sessionWriteRepository = new Mock<ISessionWriteRepository>();
         
-        var svc = new AuthService(config, logger.Object, cacheService.Object, userReadRepository.Object);
+        var svc = new AuthService(config, logger.Object, cacheService.Object, userReadRepository.Object, sessionReadRepository.Object, sessionWriteRepository.Object);
         var token = svc.GenerateJwt("11111111-1111-1111-1111-111111111111");
         token.Should().NotBeNull();
     }

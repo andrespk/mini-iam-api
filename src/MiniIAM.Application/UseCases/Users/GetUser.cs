@@ -8,7 +8,7 @@ namespace MiniIAM.Application.UseCases.Users;
 
 public static class GetUser
 {
-    public sealed record Command(Guid Id) : ICommand<IHandlerResponse<UserDto>>, ICommand, ICommand<UserDto>;
+    public sealed record Command(Guid Id) : ICommand, ICommand<UserDto>;
 
     public sealed class Handler : CommandHandler<Command, UserDto>
     {
@@ -21,7 +21,7 @@ public static class GetUser
             _repository = repository;
         }
 
-        public override async Task<IHandlerResponse<UserDto>> ExecuteAsync(Command command, CancellationToken ct = default)
+        public override async Task<UserDto> HandleAsync(Command command, CancellationToken ct = default)
         {
             try
             {
@@ -29,16 +29,21 @@ public static class GetUser
                 var result = await _repository.GetByIdAsync(command.Id, ct);
 
                 if (result.IsSuccess)
-                    return Success(result.Data!);
+                    return result.Data!;
 
-                return Error(result.Notifications.GetStringfiedList());
+                throw new InvalidOperationException(result.Notifications.GetStringfiedList());
             }
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
                 _context.Logger.Error(errorMessage, ex);
-                return Error(errorMessage);
+                throw;
             }
+        }
+
+        public override UserDto Handle(Command command)
+        {
+            return HandleAsync(command).GetAwaiter().GetResult();
         }
     }
 }

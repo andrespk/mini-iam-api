@@ -34,6 +34,7 @@ namespace MiniIAM.Extensions
 
         public static WebApplication MapEndpoints(this WebApplication app)
         {
+            HealthEndpoints.Map(app);
             AuthEndpoints.Map(app);
             UsersEndpoints.Map(app);
             return app;

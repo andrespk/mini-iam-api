@@ -10,10 +10,9 @@ using MinimalCqrs;
 
 namespace MiniIAM.Application.UseCases.Users;
 
-public static class AddUserUser
+public static class AddUserRole
 {
-    public sealed record Command(Guid UserId, IList<RoleDto> Roles, Guid ByUserId)
-        : ICommand<IHandlerResponse<Guid>>, ICommand;
+    public sealed record Command(Guid UserId, IList<RoleDto> Roles, Guid ByUserId) : ICommand, ICommand<Guid>;
 
     public sealed class Validator : Validator<Command>
     {
@@ -53,7 +52,7 @@ public static class AddUserUser
             _validator = new Validator(readRepository, roleRepository);
         }
 
-        public override async Task<IHandlerResponse<Guid>> ExecuteAsync(Command command, CancellationToken ct = default)
+        public override async Task<Guid> HandleAsync(Command command, CancellationToken ct = default)
         {
             try
             {
@@ -64,18 +63,23 @@ public static class AddUserUser
                     var user = command.Adapt<User>();
                     var result = await _repository.AddRolesAsync(command.UserId, command.Roles, command.ByUserId, ct);
 
-                    if (result.IsSuccess) return Success(user.Id);
-                    return Error(result.Notifications.GetStringfiedList());
+                    if (result.IsSuccess) return user.Id;
+                    throw new InvalidOperationException(result.Notifications.GetStringfiedList());
                 }
 
-                return Error(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
+                throw new InvalidOperationException(string.Join("\n", validation.Errors.Select(x => x.ErrorMessage)));
             }
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
                 _context.Logger.Error(errorMessage, ex);
-                return Error(errorMessage);
+                throw;
             }
+        }
+
+        public override Guid Handle(Command command)
+        {
+            return HandleAsync(command).GetAwaiter().GetResult();
         }
     }
 }

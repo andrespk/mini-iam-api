@@ -8,7 +8,7 @@ namespace MiniIAM.Endpoints;
 
 public static class AuthEndpoints
 {
-    public sealed record UserLoginRequest(string Email, string Password);
+    public sealed record UserLoginRequest(string Email, string Password, bool? IsFirstAccess = null);
     
     public static void Map(WebApplication app)
     {
@@ -27,10 +27,10 @@ public static class AuthEndpoints
                 UserLoginRequest request,
                 CancellationToken ct) =>
             {
-                var command = new LogInUser.Command(request.Email, request.Password);
+                var command = new LogInUser.Command(request.Email, request.Password, request.IsFirstAccess);
                 var response = await commands.DispatchAsync<LogInUser.Command, LogInUser.Response>(command, ct);
 
-                if (!response.IsLoggedIn)
+                if (response == null || !response.IsLoggedIn)
                     return Results.Unauthorized();
                 
                 return Results.Ok(response.Adapt<LogInUser.Response>());

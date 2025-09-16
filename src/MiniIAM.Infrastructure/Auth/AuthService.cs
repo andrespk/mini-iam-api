@@ -12,6 +12,7 @@ using MiniIAM.Infrastructure.Auth.Dtos;
 using MiniIAM.Infrastructure.Caching.Abstractions;
 using MiniIAM.Infrastructure.Data;
 using MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions;
+using MiniIAM.Infrastructure.Data.Repositories.Sessions.Abstractions;
 
 namespace MiniIAM.Infrastructure.Auth;
 
@@ -19,22 +20,19 @@ public sealed class AuthService(
     IConfiguration config,
     ILogger<AuthService> logger,
     ICachingService cacheService,
-    IUserReadRepository userReadRepository)
+    IUserReadRepository userReadRepository,
+    ISessionReadRepository sessionReadRepository,
+    ISessionWriteRepository sessionWriteRepository)
     : IAuthService
 {
-    public Result<string> GenerateJwt(string sub)
+    public Result<string> GenerateJwt(string sub, Guid? sessionId = null)
     {
         try
         {
             if (!Guid.TryParse(sub, out var userId))
                 return Result.Failure("Invalid SUB.");
 
-            var user = GetUserById(sub);
-            
-            if (user == null)
-                return Result.Failure("Invalid SUB.");
-
-            var claims = BuildClaims(userId, user.Email);
+            var claims = BuildClaims(userId, sub, sessionId); // Usar sub como email temporariamente
             var jwtKey = config["Jwt:Key"];
             
             if (string.IsNullOrEmpty(jwtKey))
@@ -44,48 +42,55 @@ public sealed class AuthService(
             var creds = new SigningCredentials(forgedKey, SecurityAlgorithms.HmacSha256);
             var token = BuildJwt(creds, claims);
 
-            return Result<string>.Success(new JwtSecurityTokenHandler().WriteToken(token));
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            logger.LogInformation("Generated JWT token: {Token}", tokenString);
+            
+            return Result<string>.Success(tokenString);
         }
         catch (Exception ex)
         {
             logger.LogError(ex.InnerException?.Message ?? ex.Message, ex);
             return Result.Failure(ex);
         }
-}
+    }
 
-    public Result<LoginResponseDto> RefreshJwt(string refreshToken)
+    public async Task<Result<LoginResponseDto>> RefreshJwtAsync(string refreshToken, CancellationToken ct = default)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
                 return Result.Failure("Missing refresh token.");
 
-            var refreshStore = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
-
-            var key = HashValue(refreshToken);
-            if (!refreshStore.TryRemove(key, out var sub))
+            // Buscar sessão pelo refresh token
+            var sessionResult = await sessionReadRepository.GetByAccessTokenAsync(refreshToken, ct);
+            if (!sessionResult.IsSuccess || sessionResult.Data == null)
                 return Result.Failure("Invalid or expired refresh token.");
 
-            if (!Guid.TryParse(sub, out var userId))
-                return Result.Failure("Invalid SUB.");
+            var session = sessionResult.Data;
+            if (!session.IsActive)
+                return Result.Failure("Session is inactive.");
 
-            var newRefreshRaw = NewRefreshToken();
-            var newRefreshHash = HashValue(newRefreshRaw);
-            refreshStore[newRefreshHash] = userId.ToString();
+            // Verificar se a sessão não expirou (20 minutos)
+            var sessionExpiration = TimeSpan.FromMinutes(20);
+            if (DateTime.UtcNow - session.LastRefreshedAtUtc > sessionExpiration)
+            {
+                // Desativar sessão expirada
+                await sessionWriteRepository.DeactivateSessionAsync(session.Id, ct);
+                return Result.Failure("Session expired.");
+            }
 
-            var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? string.Empty));
-            var creds = new SigningCredentials(jwtKey, SecurityAlgorithms.HmacSha512);
-            
-            var user = GetUserById(sub);
-            
-            if (user == null)
-                return Result.Failure("Invalid SUB.");
+            // Gerar novos tokens
+            var newRefreshToken = NewRefreshToken();
+            var newAccessToken = GenerateJwt(session.UserId.ToString(), session.Id).Data!;
 
-            var jwt = BuildJwt(creds, BuildClaims(userId, user.Email));
+            // Atualizar sessão com novos tokens
+            var updateResult = await sessionWriteRepository.UpdateSessionTokensAsync(
+                session.Id, newAccessToken, newRefreshToken, ct);
 
-            var accessToken = new JwtSecurityTokenHandler().WriteToken(jwt);
+            if (!updateResult.IsSuccess)
+                return Result.Failure("Failed to update session tokens.");
 
-            return Result<LoginResponseDto>.Success(new LoginResponseDto(true, accessToken, newRefreshRaw));
+            return Result<LoginResponseDto>.Success(new LoginResponseDto(true, newAccessToken, newRefreshToken));
         }
         catch (Exception ex)
         {
@@ -110,8 +115,29 @@ public sealed class AuthService(
 
                 if (IsPasswordValid(request.Password, user))
                 {
+                    // Verificar e desativar sessões expiradas do usuário
+                    var expiredSessions = await sessionReadRepository.GetExpiredSessionsByUserIdAsync(
+                        user.Id, TimeSpan.FromMinutes(20), ct);
+                    
+                    if (expiredSessions.IsSuccess && expiredSessions.Data.Any())
+                    {
+                        await sessionWriteRepository.DeactivateSessionsByUserIdAsync(user.Id, ct);
+                    }
+
+                    // Criar nova sessão
                     var refreshToken = NewRefreshToken();
-                    var accessToken = GenerateJwt(request.Email).Data!;
+                    var session = new MiniIAM.Domain.Sessions.Entities.Session(user.Id, "", refreshToken);
+                    var sessionResult = await sessionWriteRepository.CreateSessionAsync(session, ct);
+                    
+                    if (!sessionResult.IsSuccess)
+                        return Result.Failure("Failed to create session.");
+
+                    // Gerar access token com ID da sessão
+                    var accessToken = GenerateJwt(user.Id.ToString(), session.Id).Data!;
+                    
+                    // Atualizar sessão com access token
+                    await sessionWriteRepository.UpdateSessionTokensAsync(session.Id, accessToken, refreshToken, ct);
+
                     return Result<LoginResponseDto>.Success(new LoginResponseDto(true, accessToken, refreshToken));
                 }
             }
@@ -131,6 +157,14 @@ public sealed class AuthService(
         {
             ct.ThrowIfCancellationRequested();
             IsJwtValid(accessToken);
+            
+            // Buscar sessão pelo access token e desativar
+            var sessionResult = await sessionReadRepository.GetByAccessTokenAsync(accessToken, ct);
+            if (sessionResult.IsSuccess && sessionResult.Data != null)
+            {
+                await sessionWriteRepository.DeactivateSessionAsync(sessionResult.Data.Id, ct);
+            }
+            
             await AddJwtToBlackList(accessToken);
 
             return Result.Success();
@@ -185,10 +219,11 @@ public sealed class AuthService(
         return token;
     }
 
-    private Claim[] BuildClaims(Guid userId, string email) => new[]
+    private Claim[] BuildClaims(Guid userId, string email, Guid? sessionId = null) => new[]
     {
         new Claim("sub", userId.ToString()),
         new Claim("Email", email),
+        new Claim("session_id", sessionId?.ToString() ?? string.Empty),
     };
 
     private bool IsTokenRevoked(string accessToken)
