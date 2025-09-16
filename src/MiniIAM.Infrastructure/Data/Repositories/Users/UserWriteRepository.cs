@@ -35,9 +35,9 @@ public class UserWriteRepository(MainDbContext context) : IUserWriteRepository
 
             if (existingUser is null) return Result.Failure("User ID not found.", entity.Id);
 
-            existingUser.Name = entity.Name;
-            existingUser.Roles = entity.Roles;
-            existingUser.SetUpdateChangeHistory(byUserId);
+            existingUser.SetName(entity.Name);
+            existingUser.ReplaceRoles(entity.Roles);
+            existingUser.UpdateChangeHistory(byUserId);
             context.Users.Update(existingUser);
             await context.SaveChangesAsync(ct);
 
@@ -79,9 +79,8 @@ public class UserWriteRepository(MainDbContext context) : IUserWriteRepository
             var user = context.Users.AsNoTracking().FirstOrDefault(x => x.Id == userId);
             if (user != null)
             {
-                var encryptedPassword = BCrypt.Net.BCrypt.HashPassword(password);
-                user.Password = encryptedPassword;
-                user.SetUpdateChangeHistory(byUserId);
+                user.SetPassword(password);
+                user.UpdateChangeHistory(byUserId);
                 await context.SaveChangesAsync(ct);
 
                 return Result.Success();
@@ -120,10 +119,10 @@ public class UserWriteRepository(MainDbContext context) : IUserWriteRepository
                 foreach (var role in roles.Select(x => x.ToEntity()))
                 {
                     role.ChangesHistory.SetInsertChangesHistory(byUserId);
-                    user.Roles.Add(role);
+                    user.AddRole(role);
                 }
 
-                user.SetUpdateChangeHistory(byUserId);
+                user.UpdateChangeHistory(byUserId);
                 context.Users.Update(user);
                 await context.SaveChangesAsync(ct);
 
@@ -153,10 +152,10 @@ public class UserWriteRepository(MainDbContext context) : IUserWriteRepository
                 foreach (var userRole in user.Roles)
                 {
                     if (roles.Any(x => x.Id == userRole.Id))
-                        user.Roles.Remove(userRole);
+                        user.RemoveRole(userRole);
                 }
 
-                user.SetUpdateChangeHistory(byUserId);
+                user.UpdateChangeHistory(byUserId);
                 context.Users.Update(user);
                 await context.SaveChangesAsync(ct);
 

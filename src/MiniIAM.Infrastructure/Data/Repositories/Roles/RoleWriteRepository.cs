@@ -28,7 +28,7 @@ public class RoleWriteRepository(MainDbContext context) : IRoleWriteRepository
         try
         {
             ct.ThrowIfCancellationRequested();
-            entity.SetUpdateChangeHistory(byRoleId);
+            entity.UpdateChangeHistory(byRoleId);
             context.Roles.Update(entity);
             await context.SaveChangesAsync(ct);
             return Result.Success();

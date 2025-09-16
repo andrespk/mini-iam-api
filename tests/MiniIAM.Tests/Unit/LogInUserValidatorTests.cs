@@ -1,5 +1,8 @@
 using Xunit;
 using FluentAssertions;
+using MiniIAM.Application.UseCases.Auth;
+
+namespace MiniIAM.Tests.Unit;
 
 public class LogInUserValidatorTests
 {

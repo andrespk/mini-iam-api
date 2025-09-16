@@ -4,7 +4,7 @@ namespace MiniIAM.Infrastructure.Data;
 
 public sealed class NotificationStack
 {
-    private IList<Notification> _notifications = Array.Empty<Notification>();
+    private IList<Notification> _notifications = new List<Notification>();
     public IList<Notification> List => _notifications;
 
     public NotificationStack(IEnumerable<Notification>? notifications = null)

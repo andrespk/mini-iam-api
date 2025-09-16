@@ -35,11 +35,16 @@ public sealed class AuthService(
                 return Result.Failure("Invalid SUB.");
 
             var claims = BuildClaims(userId, user.Email);
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? string.Empty));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+            var jwtKey = config["Jwt:Key"];
+            
+            if (string.IsNullOrEmpty(jwtKey))
+                return Result.Failure("Missing JWT Key.");
+            
+            var forgedKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var creds = new SigningCredentials(forgedKey, SecurityAlgorithms.HmacSha256);
             var token = BuildJwt(creds, claims);
 
-            return Result.Success(new JwtSecurityTokenHandler().WriteToken(token));
+            return Result<string>.Success(new JwtSecurityTokenHandler().WriteToken(token));
         }
         catch (Exception ex)
         {

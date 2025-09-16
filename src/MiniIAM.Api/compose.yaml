@@ -1,7 +1,7 @@
 ﻿services:
-  movies:
-    image: movies
+  MiniIAM:
+    image: MiniIAM
     build:
       context: .
-      dockerfile: Movies/Dockerfile
+      dockerfile: MiniIAM/Dockerfile
 

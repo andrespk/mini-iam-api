@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniIAM.Infrastructure", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniIAM.Shared", "MiniIAM.Shared\MiniIAM.Shared.csproj", "{67F5FEAE-9797-43BC-BDE8-A33C5AE1FD61}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniIAM.Tests", "..\tests\MiniIAM.Tests\MiniIAM.Tests.csproj", "{21932E60-FB8C-4945-AE71-B00C2FA85A26}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{67F5FEAE-9797-43BC-BDE8-A33C5AE1FD61}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67F5FEAE-9797-43BC-BDE8-A33C5AE1FD61}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67F5FEAE-9797-43BC-BDE8-A33C5AE1FD61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21932E60-FB8C-4945-AE71-B00C2FA85A26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21932E60-FB8C-4945-AE71-B00C2FA85A26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21932E60-FB8C-4945-AE71-B00C2FA85A26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21932E60-FB8C-4945-AE71-B00C2FA85A26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

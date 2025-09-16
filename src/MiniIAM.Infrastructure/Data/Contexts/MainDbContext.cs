@@ -6,14 +6,19 @@ namespace MiniIAM.Infrastructure.Data.Contexts;
 
 public class MainDbContext : DbContext
 {
-    public DbSet<User> Users { get; }
-    public DbSet<Role> Roles { get; }
-
+    public DbSet<User> Users { get; set; } = null!;
+    public DbSet<Role> Roles { get; set; } = null!;
+    
+    public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(x => x.Id); // Primary key
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => x.Email).IsUnique();
             entity.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -23,10 +28,19 @@ public class MainDbContext : DbContext
             entity.Property(x => x.Password)
                 .IsRequired()
                 .HasMaxLength(254);
+            entity.OwnsOne(x => x.ChangesHistory);
+            
+            var rolesNav = entity.Metadata.FindNavigation(nameof(User.Roles));
+            if (rolesNav != null)
+            {
+                rolesNav.SetField("_roles");
+                rolesNav.SetPropertyAccessMode(PropertyAccessMode.Field);
+            }
+            
             modelBuilder.Entity<User>()
                 .HasMany(x => x.Roles)
                 .WithMany(x => x.Users)
-                .UsingEntity(x => x.ToTable("UserRoles"));
+                .UsingEntity("UsersVsRoles");
             modelBuilder.Entity<User>()
                 .OwnsOne(c => c.ChangesHistory, ch =>
                 {
@@ -46,6 +60,13 @@ public class MainDbContext : DbContext
             entity.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);
+            var usersNav = entity.Metadata.FindNavigation(nameof(Role.Users));
+            if (usersNav != null)
+            {
+                usersNav.SetField("_users");
+                usersNav.SetPropertyAccessMode(PropertyAccessMode.Field);
+            }
+            entity.OwnsOne(x => x.ChangesHistory);
             modelBuilder.Entity<Role>()
                 .HasMany(x => x.Users)
                 .WithMany(x => x.Roles)

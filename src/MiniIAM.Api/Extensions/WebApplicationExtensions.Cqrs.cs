@@ -1,8 +1,8 @@
+using MiniIAM.Endpoints;
 using MiniIAM.Infrastructure.Cqrs.Abstractions;
 using MiniIAM.Infrastructure.Cqrs.Dispatchers;
-using Movies.Endpoints;
 
-namespace Movies.Extensions
+namespace MiniIAM.Extensions
 {
     public static partial class WebApplicationExtensions
     {

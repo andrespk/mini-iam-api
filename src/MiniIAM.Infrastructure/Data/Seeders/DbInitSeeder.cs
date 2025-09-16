@@ -21,9 +21,9 @@ public class DbInitDataSeeder
 
         if (!_context.Roles.Any())
         {
-            _context.Roles.Add(new Role(Guid.NewGuid(), "Admin", null,
+            _context.Roles.Add(new Role(Guid.NewGuid(), "Admin",
                 new DataChangesHistory(DateTime.UtcNow, seederUserId)));
-            _context.Roles.Add(new Role(Guid.NewGuid(), "Developer", null,
+            _context.Roles.Add(new Role(Guid.NewGuid(), "Developer",
                 new DataChangesHistory(DateTime.UtcNow, seederUserId)));
 
             await _context.SaveChangesAsync(ct);

@@ -4,7 +4,7 @@ using MiniIAM.Application.UseCases.Users;
 using MiniIAM.Domain.Roles.Dtos;
 using MiniIAM.Infrastructure.Cqrs.Abstractions;
 
-namespace Movies.Endpoints;
+namespace MiniIAM.Endpoints;
 
 public static class UsersEndpoints
 {

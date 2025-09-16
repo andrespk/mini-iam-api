@@ -1,7 +1,7 @@
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Movies.Swagger;
+namespace MiniIAM.Swagger;
 
 /// <summary>
 /// Adds consistent default responses to all operations.

@@ -8,7 +8,9 @@ using MiniIAM.Domain.Users.Dtos;
 using System;
 using System.Linq;
 
-public class CustomApiFactory : WebApplicationFactory<Program>
+namespace MiniIAM.Tests.Integration;
+
+public class CustomApiFactory : WebApplicationFactory<MiniIAM.Program>
 {
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -23,7 +25,8 @@ public class CustomApiFactory : WebApplicationFactory<Program>
             if (!db.Users.Any())
             {
                 var admin = new User(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "Admin", "admin@local",
-                    BCrypt.Net.BCrypt.HashPassword("admin"), roles: null, changesHistory: null);
+                    BCrypt.Net.BCrypt.HashPassword("admin"), roles: new List<MiniIAM.Domain.Roles.Entities.Role>(), 
+                    changesHistory: new MiniIAM.Domain.Abstractions.DataChangesHistory());
                 db.Add(admin);
                 db.SaveChanges();
             }

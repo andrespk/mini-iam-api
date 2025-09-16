@@ -1,12 +1,13 @@
+using System.Data;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MiniIAM.Infrastructure.Data.Contexts;
 using MiniIAM.Infrastructure.Data.Seeders;
-using Movies.Swagger;
+using MiniIAM.Swagger;
 
-namespace Movies.Extensions;
+namespace MiniIAM.Extensions;
 
 public static partial class WebApplicationExtensions
 {
@@ -28,6 +29,20 @@ public static partial class WebApplicationExtensions
         
         // CQRS
         builder.Services.AddCqrs();
+        
+        //Database
+        builder.Services.AddDbContext<MainDbContext>(options =>
+        {
+            var dbName = builder.Configuration["Database:InMemory:Name"];
+
+            if (string.IsNullOrEmpty(dbName))
+                throw new NoNullAllowedException("Missing DB configuration.");
+            
+            options.UseInMemoryDatabase(dbName);
+            
+            if (builder.Environment.IsDevelopment())
+                options.EnableSensitiveDataLogging();
+        });
         
         //Initial Data Seeder
         builder.Services.AddScoped<DbInitDataSeeder>();

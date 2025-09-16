@@ -5,6 +5,8 @@ using MiniIAM.Infrastructure.Auth.Dtos;
 using System.Threading.Tasks;
 using System.Net;
 
+namespace MiniIAM.Tests.Integration;
+
 public class AuthAndUsersEndpointsTests : IClassFixture<CustomApiFactory>
 {
     private readonly CustomApiFactory _factory;
@@ -17,7 +19,7 @@ public class AuthAndUsersEndpointsTests : IClassFixture<CustomApiFactory>
         {
             AllowAutoRedirect = false
         });
-        var resp = await client.PostAsJsonAsync("/auth/login", new LoginRequestDto("admin@local", "admin"));
+        var resp = await client.PostAsJsonAsync("/auth/login", new LoginRequestDto("admin@local", "admin", null));
         resp.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Unauthorized);
     }
 }

@@ -10,5 +10,10 @@ public record RoleDto(
     IList<UserDto>? Users,
     DataChangesHistory? ChangesHistory) : IEntityDto<Role>
 {
-    public Role ToEntity() => new(Id, Name, Users?.Select(x => x.ToEntity()).ToList(), ChangesHistory);
+    public Role ToEntity()
+    {
+        var role =  new Role(Id, Name, ChangesHistory);
+        if (Users != null) role.AddUsers(Users.Select(x => x.ToEntity()));
+        return role;
+    }
 }

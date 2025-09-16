@@ -65,17 +65,17 @@ public sealed class Result<T>(T? data, IList<Notification>? notifications = null
 
     public static Result<T> Success(string message, T resultContent) => new(message, resultContent);
 
-    public new static Result<T> Failure(string error, object? errorDetails = null) =>
+    public static Result<T> Failure(string error, object? errorDetails = null) =>
         new(default, new List<Notification> { Notification.NewError(error, errorDetails) });
 
-    public new static Result<T> Failure(Exception exception) =>
+    public static Result<T> Failure(Exception exception) =>
         new(default, new List<Notification> { Notification.NewError(exception) });
 
     public static Result<T> Failure(IList<string> errors, object? errorDetails = null) =>
         errors.Select(x => new Notification(NotificationLevel.Error, x, errorDetails)).ToList() is var
             notifications
             ? new Result<T>(default, notifications)
-            : new Result<T>(default, Array.Empty<Notification>());
+            : new Result<T>(default, new List<Notification>());
 
     public static implicit operator Result<T>(Result result) => new Result(result.Notifications.List);
 
@@ -114,7 +114,7 @@ public sealed class ResultList<T>(IList<T>? data, IList<Notification>? notificat
         return errors.Select(x => new Notification(NotificationLevel.Error, x, errorDetails)).ToList() is var
             notifications
             ? new ResultList<T>(default, notifications)
-            : new ResultList<T>(default, Array.Empty<Notification>());
+            : new ResultList<T>(default, new List<Notification>());
     }
 
     public static implicit operator ResultList<T>(Result result) => new Result(result.Notifications.List);
@@ -134,20 +134,24 @@ public sealed class Result(IList<Notification>? notifications = null)
 
     public static Result Success() => new();
 
-    public static Result Success(string message) => new(new List<Notification>() { Notification.NewInfo(message) });
+    public static Result Success(string message)
+    {
+        var messageNotification = new List<Notification> { Notification.NewInfo(message) };   
+        return new Result(messageNotification);
+    }
 
-    public new static Result Failure(string error, object? errorDetails = null) =>
+    public static Result Failure(string error, object? errorDetails = null) =>
         new(default, new List<Notification> { Notification.NewError(error, errorDetails) });
 
-    public new static Result Failure(Exception exception) =>
+    public static Result Failure(Exception exception) =>
         new(new List<Notification> { Notification.NewError(exception) });
 
     public static Result Failure(IList<string> errors, object? errorDetails = null) =>
         errors.Select(x => new Notification(NotificationLevel.Error, x, errorDetails)).ToList() is var
             notifications
             ? new Result(notifications)
-            : new Result(Array.Empty<Notification>());
+            : new Result(new List<Notification>());
 
     public static Result NoDataFound(object? errorDetails = null) =>
-        new Result("No data found.", Array.Empty<Notification>());
+        new ("No data found.", new List<Notification>());
 }

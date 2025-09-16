@@ -1,5 +1,5 @@
+using MiniIAM.Extensions;
 using MiniIAM.Infrastructure.Data.Seeders;
-using Movies.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +24,8 @@ app.MapEndpoints();
 
 app.Run();
 
-namespace Movies
+namespace MiniIAM
 {
     public partial class Program { }
 }
+

@@ -6,6 +6,6 @@ namespace MiniIAM.Infrastructure.Data.Repositories.Roles.Abstractions;
 
 public interface IRoleReadRepository : IReadRepository<Role, Guid, RoleDto>
 {
-    public Result<RoleDto> GetById(Guid id);
+    new Result<RoleDto> GetById(Guid id);
     public Result<RoleDto> GetByName(string name);
 }

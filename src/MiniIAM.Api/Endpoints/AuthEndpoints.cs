@@ -4,7 +4,7 @@ using MiniIAM.Application.UseCases.Auth;
 using MiniIAM.Infrastructure.Auth.Dtos;
 using MiniIAM.Infrastructure.Cqrs.Abstractions;
 
-namespace Movies.Endpoints;
+namespace MiniIAM.Endpoints;
 
 public static class AuthEndpoints
 {
