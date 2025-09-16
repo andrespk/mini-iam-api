@@ -1,6 +1,6 @@
 # MiniIAM (.NET 9, Minimal API + CQRS)
 
-Este projeto implementa um **IAM** mínimo com **Minimal API** + **CQRS (MinimalCqrs)**, organizado por camadas:
+This project implements a minimal IAM using **Minimal API** + **CQRS (MinimalCqrs)**, organized by layers:
 
 ```
 src/
@@ -11,22 +11,24 @@ src/
       RolesEndpoints.cs
     Program.cs
   MiniIAM.Application/    # Use cases (Commands/Queries)
-  MiniIAM.Domain/         # Entidades + DTOs
+  MiniIAM.Domain/         # Entities + DTOs
   MiniIAM.Infrastructure/ # EF Core, Repositories, Auth, Caching
-  MiniIAM.Shared/         # Extensões e utilidades (AddMiniIamInfrastructure, UseMiniIamApi)
-  MiniIAM.Tests/          # Testes (unitários e de integração)
+  MiniIAM.Shared/         # Extensions & utilities (AddMiniIamInfrastructure, UseMiniIamApi)
+tests/
+  MiniIAM.Tests.Unit/     # Unit tests
+  MiniIAM.Tests.Integration/ # Integration tests
 ```
 
-## Padrões e decisões
-- **Minimal APIs** com `MapGroup` e proteção por JWT: todas as rotas são protegidas por padrão,
-  exceto `POST /auth/login` e `POST /auth/logout` (permitidas anonimamente).
-- **CQRS** com `MinimalCqrs` (`IMediator.Send`) para acoplar endpoints a _use cases_ em `MiniIAM.Application`.
-- **EF Core InMemory** para dev/test: definido em `AddMiniIamInfrastructure` (pode ser trocado depois para SQL Server).
-- **Swagger/OpenAPI** ativado no `Development`.
-- **Testes** com xUnit, FluentAssertions e WebApplicationFactory.
+## Patterns & decisions
+- **Minimal APIs** with `MapGroup` and JWT protection: all routes are protected by default,
+  except `POST /auth/login` and `POST /auth/logout` (anonymous allowed).
+- **CQRS** using `MinimalCqrs` (`ICommandDispatcher.Dispatch`) to connect endpoints with **use cases** in `MiniIAM.Application`.
+- **EF Core InMemory** for dev/test: configured in `AddMiniIamInfrastructure` (you can later switch to SQL Server).
+- **Swagger/OpenAPI** enabled in `Development`.
+- **Tests** with xUnit, FluentAssertions and WebApplicationFactory.
 
-## Como rodar localmente
-Pré-requisitos: .NET 9 SDK
+## Run locally
+Prerequisites: .NET 9 SDK
 
 ```bash
 cd src
@@ -35,41 +37,45 @@ dotnet build
 dotnet run --project MiniIAM.Api
 ```
 
-A API sobe em `http://localhost:5000` (Kestrel default) ou `https://localhost:5001`. No Docker, usa `:8080`.
+Swagger: `https://localhost:5001/swagger` (or whatever Kestrel port you see).
 
 ### Via Docker Compose
 ```bash
 docker compose up --build
 ```
-Acesse `http://localhost:8080/swagger`.
+Browse `http://localhost:8080/swagger`.
 
 ## Endpoints
 
-- `POST /auth/login` — corpo: `{ "email": "", "password": "" }` → retorna `{ accessToken, refreshToken }`.
+- `POST /auth/login` — body: `{ "email": "", "password": "" }` → returns `{ accessToken, refreshToken }`.
 - `POST /auth/logout` — header `Authorization: Bearer <token>`.
-- `POST /users` — cria usuário (protegido).
-- `PUT /users/{id}` — atualiza usuário (protegido).
-- `POST /users/{id}/roles/{roleId}` — adiciona role (protegido).
-- `POST /roles` — cria role (protegido).
-- `PUT /roles/{id}` — atualiza role (protegido).
+- `POST /users` — create a user (protected).
+- `PUT /users/{id}` — update a user (protected).
+- `POST /users/{id}/roles/{roleId}` — assign a role (protected).
+- `POST /roles` — create a role (protected).
+- `PUT /roles/{id}` — update a role (protected).
 
-## Testes & Cobertura
+## Tests & Coverage
 
-Executar testes:
+Run tests:
 ```bash
-cd src/MiniIAM.Tests
+cd tests/MiniIAM.Tests.Unit
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov
+
+cd ../MiniIAM.Tests.Integration
 dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov
 ```
 
-Os testes fornecidos cobrem autenticação básica e _handlers_ essenciais. Amplie para atingir **≥85%** conforme evoluir os casos.
+The provided tests exercise **API**, **Use Case**, and **Infrastructure** layers.
+Extend them to easily reach **≥80% coverage** (the scaffolding and examples are ready).
 
-## Arquivo `.http`
-No `MiniIAM.Api/MiniIAM.Api.http` há exemplos para chamar os endpoints com `rest-client`/VS Code.
+## `.http` file
+See `src/MiniIAM.Api/MiniIAM.Api.http` for ready-to-run endpoint calls.
 
 ## Docker
 
-- `MiniIAM.Api/Dockerfile` faz _restore_, _build_ e _publish_ e roda no ASP.NET 9.
-- `docker-compose.yml` expõe a API em `8080`.
+- `src/MiniIAM.Api/Dockerfile` builds & runs the API on ASP.NET 9.
+- `docker-compose.yml` exposes the API at `8080`.
 
-## Variáveis
-- `Jwt:Key` (ou `Jwt__Key` no Docker) — chave HMAC para assinar JWT.
+## Configuration
+- `Jwt:Key` (or `Jwt__Key` in Docker) — HMAC key to sign JWTs.

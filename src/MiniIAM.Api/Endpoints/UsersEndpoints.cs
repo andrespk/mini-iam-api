@@ -1,37 +1,40 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Authorization;
-using MinimalCqrs;
-using MiniIAM.Domain.Users.Dtos;
-using System.Threading.Tasks;
+using Asp.Versioning;
+using MiniIAM.Application.UseCases.Users;
 
-namespace MiniIAM.Api.Endpoints;
+namespace Movies.Endpoints;
 
 public static class UsersEndpoints
 {
     public static void Map(WebApplication app)
     {
-        var group = app.MapGroup("/users").RequireAuthorization();
+        var v1 = app.NewApiVersionSet().HasApiVersion(new ApiVersion(1, 0)).ReportApiVersions().Build();
+        var group = app.MapGroup("/users").WithApiVersionSet(v1).MapToApiVersion(1.0).RequireAuthorization();
 
-        group.MapPost("/", async (IMediator mediator, AddUser.Command cmd, CancellationToken ct) =>
-        {
-            var result = await mediator.Send(cmd, ct);
-            return result.IsSuccess ? Results.Created($"/users/{result.Value!.Id}", result.Value) : Results.BadRequest(result.Error?.Message);
-        });
+        group.MapPost("/", .WithSummary("Create user").WithDescription("Creates a new user.")
+            .Produces(StatusCodes.Status201Created).Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized) async (ICommandDispatcher commands, AddUser.Command cmd,
+                CancellationToken ct) =>
+            {
+                var result = await commands.Dispatch(cmd, ct);
+                return result.IsSuccess
+                    ? Results.Created($"/users/{result.Value!.Id}", result.Value)
+                    : Results.BadRequest(result.Error?.Message);
+            });
 
-        group.MapPut("/{id:guid}", async (IMediator mediator, Guid id, UpdateUser.Request body, CancellationToken ct) =>
-        {
-            var cmd = new UpdateUser.Command(id, body.Name, body.Email, body.Password);
-            var result = await mediator.Send(cmd, ct);
-            return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error?.Message);
-        });
+        group.MapPut("/{id:guid}",
+            async (ICommandDispatcher commands, Guid id, UpdateUser.Request body, CancellationToken ct) =>
+            {
+                var cmd = new UpdateUser.Command(body.Name, body.Roles, id);
+                var result = await commands.Dispatch(cmd, ct);
+                return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error?.Message);
+            });
 
-        group.MapPost("/{id:guid}/roles/{roleId:guid}", async (IMediator mediator, Guid id, Guid roleId, CancellationToken ct) =>
-        {
-            var cmd = new AddUserRole.Command(id, roleId);
-            var result = await mediator.Send(cmd, ct);
-            return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error?.Message);
-        });
+        group.MapPost("/{id:guid}/roles/{roleId:guid}",
+            async (ICommandDispatcher commands, Guid id, Guid roleId, CancellationToken ct) =>
+            {
+                var cmd = new AssignRoleToUser.Command(id, roleId);
+                var result = await commands.Dispatch(cmd, ct);
+                return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error?.Message);
+            });
     }
 }

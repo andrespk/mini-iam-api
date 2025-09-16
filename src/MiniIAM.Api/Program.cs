@@ -21,3 +21,8 @@ app.UseAuthorization();
 app.UseMiniIamApi();
 
 app.Run();
+
+namespace Movies
+{
+    public partial class Program { }
+}

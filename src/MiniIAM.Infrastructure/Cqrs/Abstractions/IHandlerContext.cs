@@ -1,6 +1,6 @@
 ﻿using Serilog;
 
-namespace MiniIAM.Infrastructure.Handlers.Abstractions;
+namespace MiniIAM.Infrastructure.Cqrs.Abstractions;
 
 public interface IHandlerContext
 {

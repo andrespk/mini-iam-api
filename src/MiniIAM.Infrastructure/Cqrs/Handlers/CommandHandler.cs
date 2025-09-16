@@ -1,7 +1,8 @@
-﻿using MinimalCqrs;
+﻿using MiniIAM.Infrastructure.Cqrs.Abstractions;
+using MinimalCqrs;
 using Serilog;
 
-namespace MiniIAM.Infrastructure.Handlers.Abstractions;
+namespace MiniIAM.Infrastructure.Cqrs.Handlers;
 
 public abstract class CommandHandler<TCommand, TResponse> : Handler<TCommand, TResponse>
     where TCommand : IHandlerMessage<IHandlerResponse<TResponse>>

@@ -1,9 +1,12 @@
-﻿using MinimalCqrs;
-using FluentValidation;
+﻿using FluentValidation;
 using Mapster;
 using MiniIAM.Domain.Users.Entitties;
+using MiniIAM.Infrastructure.Cqrs.Abstractions;
+using MiniIAM.Infrastructure.Cqrs.Handlers;
 using MiniIAM.Infrastructure.Data.Repositories.Users.Abstractions;
-using MiniIAM.Infrastructure.Handlers.Abstractions;
+using MinimalCqrs;
+
+namespace MiniIAM.Application.UseCases.Users;
 
 public static class AddUser
 {

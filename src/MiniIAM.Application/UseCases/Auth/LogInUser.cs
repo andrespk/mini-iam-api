@@ -1,9 +1,12 @@
-﻿using MinimalCqrs;
-using FluentValidation;
+﻿using FluentValidation;
 using Mapster;
 using MiniIAM.Infrastructure.Auth.Abstractions;
 using MiniIAM.Infrastructure.Auth.Dtos;
-using MiniIAM.Infrastructure.Handlers.Abstractions;
+using MiniIAM.Infrastructure.Cqrs.Abstractions;
+using MiniIAM.Infrastructure.Cqrs.Handlers;
+using MinimalCqrs;
+
+namespace MiniIAM.Application.UseCases.Auth;
 
 public static class LogInUser
 {
@@ -45,7 +48,7 @@ public static class LogInUser
 
         public override async Task<IHandlerResponse<Response>> ExecuteAsync(Command command, CancellationToken ct = default)
         {
-           try
+            try
             {
                 var validation = await _validator.ValidateAsync(command, ct);
                 if (validation.IsValid)

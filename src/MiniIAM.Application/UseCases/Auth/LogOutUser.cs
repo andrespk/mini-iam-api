@@ -1,7 +1,10 @@
-﻿using MinimalCqrs;
-using FluentValidation;
+﻿using FluentValidation;
 using MiniIAM.Infrastructure.Auth.Abstractions;
-using MiniIAM.Infrastructure.Handlers.Abstractions;
+using MiniIAM.Infrastructure.Cqrs.Abstractions;
+using MiniIAM.Infrastructure.Cqrs.Handlers;
+using MinimalCqrs;
+
+namespace MiniIAM.Application.UseCases.Auth;
 
 public static class LogOutUser
 {

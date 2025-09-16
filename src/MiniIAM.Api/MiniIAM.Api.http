@@ -15,7 +15,7 @@ Content-Type: application/json
 POST {{host}}/auth/logout
 Authorization: Bearer {{token}}
 
-### Create user (needs token)
+### Create user (requires token)
 POST {{host}}/users
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -37,7 +37,7 @@ Content-Type: application/json
   "Password": "123456"
 }
 
-### Add role to user
+### Assign role to user
 POST {{host}}/users/{{userId}}/roles/{{roleId}}
 Authorization: Bearer {{token}}
 

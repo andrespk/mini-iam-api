@@ -22,6 +22,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MiniIAM.Infrastructure\MiniIAM.Infrastructure.csproj" />
+      <ProjectReference Include="..\MiniIAM.Shared\MiniIAM.Shared.csproj" />
     </ItemGroup>
-
 </Project>
